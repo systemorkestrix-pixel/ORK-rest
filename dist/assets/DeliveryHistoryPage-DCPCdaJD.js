@@ -1,0 +1,1 @@
+import{j as r}from"./vendor-react-Cih_IFBj.js";import{x as t}from"./app-shared-BfX5ON1c.js";import"./vendor-misc-MNMGsOIU.js";function s(){return r.jsx(t,{title:"سجل التوصيل",description:"سجل عمليات التوصيل سيظهر هنا للمراجعة الإدارية."})}export{s as DeliveryHistoryPage};

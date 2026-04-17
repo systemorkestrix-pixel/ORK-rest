@@ -1,0 +1,1 @@
+import{j as e}from"./vendor-react-Cih_IFBj.js";import{f as o}from"./vendor-router-DQfsePWg.js";import"./vendor-misc-MNMGsOIU.js";function a(){return e.jsx(o,{to:"/console?channel=warehouse&section=warehouseInbound",replace:!0})}export{a as WarehouseSuppliersPage};

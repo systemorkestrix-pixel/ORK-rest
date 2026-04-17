@@ -1,0 +1,1 @@
+import{j as r}from"./vendor-react-Cih_IFBj.js";import{x as t}from"./app-shared-BfX5ON1c.js";import"./vendor-misc-MNMGsOIU.js";function s(){return r.jsx(t,{title:"الطاولات العامة",description:"توفر الطاولات سيظهر هنا للاستخدام العام."})}export{s as PublicTablesPage};
