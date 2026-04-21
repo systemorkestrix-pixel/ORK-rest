@@ -97,9 +97,6 @@ const IntelligenceReportsPage = lazy(() =>
 const SystemUsersPage = lazy(() =>
   import('@/pages/system/users/SystemUsersPage').then((m) => ({ default: m.SystemUsersPage }))
 );
-const ManagerPlansPage = lazy(() =>
-  import('@/modules/system/plans/ManagerPlansPage').then((m) => ({ default: m.ManagerPlansPage }))
-);
 const ProductsPage = lazy(() =>
   import('@/modules/system/catalog/products/ProductsPage').then((m) => ({ default: m.ProductsPage }))
 );
@@ -315,7 +312,7 @@ export function AppRouter() {
           <Route path="/console/intelligence/reports" element={withRouteSuspense(<IntelligenceReportsPage />)} />
 
           <Route path="/console/control-plane" element={<Navigate to="/console/system/settings" replace />} />
-          <Route path="/console/plans" element={withRouteSuspense(<ManagerPlansPage />)} />
+          <Route path="/console/plans" element={<Navigate to="/console" replace />} />
           <Route path="/console/system" element={withRouteSuspense(<SystemUsersPage />)} />
           <Route path="/console/system/users" element={<Navigate to="/console/system" replace />} />
           <Route path="/console/system/catalog" element={<Navigate to="/console/operations/menu" replace />} />
