@@ -64,6 +64,15 @@ app.add_middleware(
 )
 
 
+@app.get("/")
+def root() -> dict[str, str]:
+    return {
+        "status": "ok",
+        "service": "restaurants-api",
+        "entry": "/manager/login",
+    }
+
+
 @app.exception_handler(HTTPException)
 async def sanitized_http_exception_handler(_: Request, exc: HTTPException) -> JSONResponse:
     detail = sanitize_payload(exc.detail, fallback="Request processing failed.")
