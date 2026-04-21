@@ -11,7 +11,6 @@ import {
   ClipboardList,
   Cog,
   House,
-  Layers3,
   LogOut,
   Menu,
   MoonStar,
@@ -72,6 +71,7 @@ const ReportsPage = lazy(() =>
 );
 
 const SECTION_TO_CHANNEL: Record<ConsoleSection, ConsoleChannel> = {
+  systemHub: 'system',
   orders: 'operations',
   tables: 'operations',
   alerts: 'operations',
@@ -90,6 +90,7 @@ const SECTION_TO_CHANNEL: Record<ConsoleSection, ConsoleChannel> = {
   warehouseCounts: 'warehouse',
   warehouseLedger: 'warehouse',
   financeOverview: 'finance',
+  financeExpenses: 'finance',
   financeCashbox: 'finance',
   financeSettlements: 'finance',
   financeEntries: 'finance',
@@ -97,7 +98,9 @@ const SECTION_TO_CHANNEL: Record<ConsoleSection, ConsoleChannel> = {
   operationalHeart: 'intelligence',
   reports: 'intelligence',
   staff: 'system',
+  audit: 'system',
   settings: 'system',
+  roles: 'system',
 };
 
 const SECTION_CAPABILITIES: Partial<Record<ConsoleSection, string>> = {
@@ -195,7 +198,7 @@ const OPERATIONAL_HEART_QUERY_KEY = ['console-operational-heart'] as const;
 const HEADER_ICON_BUTTON_CLASS =
   'inline-flex h-14 w-14 flex-col items-center justify-center gap-1 rounded-xl border border-[var(--console-border)] bg-[var(--surface-card-soft)] text-[var(--text-secondary)] shadow-[inset_0_1px_0_rgba(255,255,255,0.16)] transition hover:border-[#b98757] hover:bg-[var(--surface-card-hover)] hover:text-[var(--text-primary)]';
 const HEADER_LOGOUT_BUTTON_CLASS =
-  'inline-flex h-14 w-14 items-center justify-center rounded-xl border border-rose-300 bg-rose-100/85 text-rose-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.16)] transition hover:border-rose-400 hover:bg-rose-100 hover:text-rose-950';
+  'inline-flex h-14 w-14 items-center justify-center rounded-xl border border-rose-300 bg-rose-100/80 text-rose-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.16)] transition hover:border-rose-400 hover:bg-rose-100 hover:text-rose-950';
 const MOBILE_BOTTOM_NAV_BUTTON_CLASS =
   'inline-flex min-h-[56px] flex-1 flex-col items-center justify-center gap-1 rounded-2xl border border-[var(--console-border)] bg-[var(--surface-card)] px-2 py-2 text-[11px] font-black text-[var(--text-secondary)] shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] transition hover:border-[#b98757] hover:bg-[var(--surface-card-hover)] hover:text-[var(--text-primary)]';
 const MOBILE_BOTTOM_NAV_ACTIVE_CLASS =
@@ -210,7 +213,7 @@ function resolveHeaderAlertTone(notifications: ReturnType<typeof useManagerAlert
   if (hasCritical) {
     return {
       iconButton:
-        'border-rose-300 bg-rose-100/90 text-rose-800 hover:border-rose-400 hover:bg-rose-100 hover:text-rose-900',
+        'border-rose-300 bg-rose-100/80 text-rose-800 hover:border-rose-400 hover:bg-rose-100 hover:text-rose-900',
       tile: 'border-rose-200 bg-rose-50 text-rose-800',
       badge: 'border-rose-700 bg-rose-700 text-rose-50',
     };
@@ -218,7 +221,7 @@ function resolveHeaderAlertTone(notifications: ReturnType<typeof useManagerAlert
   if (hasWarning) {
     return {
       iconButton:
-        'border-amber-300 bg-amber-100/90 text-amber-800 hover:border-amber-400 hover:bg-amber-100 hover:text-amber-900',
+        'border-amber-300 bg-amber-100/80 text-amber-800 hover:border-amber-400 hover:bg-amber-100 hover:text-amber-900',
       tile: 'border-amber-200 bg-amber-50 text-amber-800',
       badge: 'border-amber-700 bg-amber-700 text-amber-50',
     };
@@ -226,7 +229,7 @@ function resolveHeaderAlertTone(notifications: ReturnType<typeof useManagerAlert
   if (hasInfo) {
     return {
       iconButton:
-        'border-sky-300 bg-sky-100/90 text-sky-800 hover:border-sky-400 hover:bg-sky-100 hover:text-sky-900',
+        'border-sky-300 bg-sky-100/80 text-sky-800 hover:border-sky-400 hover:bg-sky-100 hover:text-sky-900',
       tile: 'border-sky-200 bg-sky-50 text-sky-800',
       badge: 'border-sky-700 bg-sky-700 text-sky-50',
     };
@@ -234,7 +237,7 @@ function resolveHeaderAlertTone(notifications: ReturnType<typeof useManagerAlert
   if (hasAnyActions) {
     return {
       iconButton:
-        'border-emerald-300 bg-emerald-100/90 text-emerald-800 hover:border-emerald-400 hover:bg-emerald-100 hover:text-emerald-900',
+        'border-emerald-300 bg-emerald-100/80 text-emerald-800 hover:border-emerald-400 hover:bg-emerald-100 hover:text-emerald-900',
       tile: 'border-emerald-200 bg-emerald-50 text-emerald-800',
       badge: 'border-emerald-700 bg-emerald-700 text-emerald-50',
     };
@@ -293,9 +296,6 @@ function resolveStateFromSearch(
 }
 
 function resolveStateFromPath(pathname: string): { channel: ConsoleChannel | null; section: ConsoleSection | null } | null {
-  if (pathname.startsWith('/console/plans')) {
-    return { channel: null, section: null };
-  }
   if (pathname === '/console/system') {
     return { channel: 'system', section: 'staff' };
   }
@@ -433,8 +433,27 @@ export function ConsolePage() {
     enabled: role === 'manager',
     staleTime: 30_000,
   });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    const tenantCode = tenantContextQuery.data?.tenant_code?.trim();
+    if (!tenantCode) {
+      return;
+    }
+    window.sessionStorage.setItem('active_tenant_code', tenantCode);
+  }, [tenantContextQuery.data?.tenant_code]);
   const sectionModes = tenantContextQuery.data?.section_modes ?? {};
   const channelModes = tenantContextQuery.data?.channel_modes ?? {};
+
+  const visibleChannels = useMemo(
+    () =>
+      (['operations', 'kitchen', 'delivery', 'warehouse', 'finance', 'intelligence'] as const).filter(
+        (channel) => (channelModes[channel] ?? 'core') === 'core'
+      ),
+    [channelModes]
+  );
 
   const availableCards = useMemo(() => {
     const isSectionVisible = (section: ConsoleSection) => (sectionModes[section] ?? 'core') === 'core';
@@ -478,29 +497,46 @@ export function ConsolePage() {
   });
 
   useEffect(() => {
-    if (location.pathname !== '/console') {
-      const directState = resolveStateFromPath(location.pathname);
-      if (directState) {
-        setActiveChannel((current) => (current !== directState.channel ? directState.channel : current));
-        setActiveSection((current) => (current !== directState.section ? directState.section : current));
+    if (tenantContextQuery.isLoading) {
+      return;
+    }
+
+    if (activeSection && !allowedSections.has(activeSection)) {
+      const fallbackSection = allowedSections.has('orders')
+        ? 'orders'
+        : availableCards.find((card) => card.channel === 'operations')?.id ?? availableCards[0]?.id ?? null;
+      if (fallbackSection) {
+        const fallbackChannel = SECTION_TO_CHANNEL[fallbackSection];
+        setActiveChannel(fallbackChannel);
+        setActiveSection(fallbackSection);
+        const directPath = resolveDirectPathForSection(fallbackSection);
+        navigate(directPath ?? buildConsoleStatePath(fallbackChannel, fallbackSection), { replace: true });
+      } else {
+        setActiveChannel(null);
+        setActiveSection(null);
+        navigate('/console', { replace: true });
       }
       return;
     }
 
-    const state = resolveStateFromSearch(searchParams, allowedSections);
-
-    setActiveChannel((current) => (current !== state.channel ? state.channel : current));
-    setActiveSection((current) => (current !== state.section ? state.section : current));
-  }, [allowedSections, location.pathname, searchStateKey]);
-
-  useEffect(() => {
-    if (!activeChannel || !activeSection || SECTION_TO_CHANNEL[activeSection] !== activeChannel) {
-      return;
+    if (activeChannel && activeChannel !== 'system' && !visibleChannels.includes(activeChannel)) {
+      setActiveChannel(null);
+      if (location.pathname === '/console') {
+        syncSearchState(null, null);
+      } else {
+        navigate('/console', { replace: true });
+      }
     }
-    setLastSectionByChannel((current) =>
-      current[activeChannel] === activeSection ? current : { ...current, [activeChannel]: activeSection }
-    );
-  }, [activeChannel, activeSection]);
+  }, [
+    activeChannel,
+    activeSection,
+    allowedSections,
+    availableCards,
+    location.pathname,
+    navigate,
+    tenantContextQuery.isLoading,
+    visibleChannels,
+  ]);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -540,6 +576,84 @@ export function ConsolePage() {
       }
     }
     setSearchParams(next, { replace: true });
+  };
+
+  const openAlertsSection = () => {
+    setActiveChannel(null);
+    setActiveSection('alerts');
+    syncSearchState(null, 'alerts');
+    navigate('/console/alerts');
+  };
+
+  const openSystemCenterSection = () => {
+    setActiveChannel('system');
+    setActiveSection('staff');
+    syncSearchState('system', 'staff');
+    navigate('/console/system');
+  };
+
+  const openSystemHubSection = () => {
+    setActiveChannel(null);
+    setActiveSection(null);
+    syncSearchState(null, null);
+    navigate('/console/system/settings');
+  };
+
+  const openMobileSystemTarget = () => {
+    if (hasSettingsAccess) {
+      openSystemHubSection();
+      return;
+    }
+    openSystemCenterSection();
+  };
+
+  const openSection = (section: ConsoleSection) => {
+    if (section === 'alerts') {
+      openAlertsSection();
+      return;
+    }
+    const nextChannel = SECTION_TO_CHANNEL[section];
+    setActiveChannel(nextChannel);
+    setActiveSection(section);
+    setLastSectionByChannel((current) => ({ ...current, [nextChannel]: section }));
+    syncSearchState(nextChannel, section);
+    const directPath = resolveDirectPathForSection(section);
+    navigate(directPath ?? buildConsoleStatePath(nextChannel, section));
+  };
+
+  const selectChannel = (channel: ConsoleChannel | null) => {
+    if (!channel) {
+      setActiveChannel(null);
+      setActiveSection(null);
+      syncSearchState(null, null);
+      navigate('/console');
+      return;
+    }
+
+    const preferred = lastSectionByChannel[channel];
+    const fallback = availableCards.find((card) => card.channel === channel)?.id ?? null;
+    const nextSection = preferred && allowedSections.has(preferred) ? preferred : fallback;
+
+    setActiveChannel(channel);
+    setActiveSection(nextSection);
+    if (nextSection) {
+      setLastSectionByChannel((current) => ({ ...current, [channel]: nextSection }));
+    }
+    syncSearchState(channel, nextSection);
+    if (nextSection) {
+      const directPath = resolveDirectPathForSection(nextSection);
+      navigate(directPath ?? buildConsoleStatePath(channel, nextSection));
+    } else {
+      navigate(buildConsoleStatePath(channel, null));
+    }
+  };
+
+  const openOrdersCreation = () => {
+    setHomeOrdersCreateToken((current) => current + 1);
+    setActiveChannel('operations');
+    setActiveSection('orders');
+    syncSearchState('operations', 'orders', { new: '1' });
+    navigate('/console/operations/orders?new=1');
   };
 
   const goToConsoleHome = () => {
@@ -583,13 +697,6 @@ export function ConsolePage() {
     [availableCards, cardMetrics.delivery, cardMetrics.kitchen, cardMetrics.orders]
   );
 
-  const visibleChannels = useMemo(
-    () =>
-      (['operations', 'kitchen', 'delivery', 'warehouse', 'finance', 'intelligence'] as const).filter(
-        (channel) => (channelModes[channel] ?? 'core') === 'core'
-      ),
-    [channelModes]
-  );
   const singleCoreChannel = visibleChannels.length === 1 ? visibleChannels[0] : null;
   const effectiveChannel = activeChannel ?? singleCoreChannel;
   const channelSections = useMemo(
@@ -601,8 +708,7 @@ export function ConsolePage() {
   const grantedPermissions = Array.isArray(user?.permissions_effective) ? new Set(user.permissions_effective) : null;
   const hasSettingsAccess = !grantedPermissions || grantedPermissions.has('manager.settings.view');
   const isDirectConsoleRoute = location.pathname !== '/console';
-  const showSectionBar =
-    Boolean(effectiveChannel) && !location.pathname.startsWith('/console/system') && !location.pathname.startsWith('/console/plans');
+  const showSectionBar = Boolean(effectiveChannel) && !location.pathname.startsWith('/console/system');
   const showChannelBar = showNavigationBars && visibleChannels.length > 1;
   const activeSectionCard = activeSection ? cardsWithMetrics.find((card) => card.id === activeSection) ?? null : null;
   const currentChannelLabel = effectiveChannel
@@ -630,109 +736,6 @@ export function ConsolePage() {
   const isHomeActive = !isDirectConsoleRoute && !activeSection;
   const isAlertsActive = location.pathname.startsWith('/console/alerts');
   const isSystemActive = location.pathname.startsWith('/console/system');
-  const isPlansActive = location.pathname.startsWith('/console/plans');
-
-  useEffect(() => {
-    if (tenantContextQuery.isLoading) {
-      return;
-    }
-
-    if (activeSection && !allowedSections.has(activeSection)) {
-      const fallbackSection = allowedSections.has('orders')
-        ? 'orders'
-        : availableCards.find((card) => card.channel === 'operations')?.id ?? availableCards[0]?.id ?? null;
-      if (fallbackSection) {
-        const fallbackChannel = SECTION_TO_CHANNEL[fallbackSection];
-        setActiveChannel(fallbackChannel);
-        setActiveSection(fallbackSection);
-        const directPath = resolveDirectPathForSection(fallbackSection);
-        navigate(directPath ?? buildConsoleStatePath(fallbackChannel, fallbackSection), { replace: true });
-      } else {
-        setActiveChannel(null);
-        setActiveSection(null);
-        navigate('/console', { replace: true });
-      }
-      return;
-    }
-
-    if (activeChannel && activeChannel !== 'system' && !visibleChannels.includes(activeChannel)) {
-      setActiveChannel(null);
-      if (location.pathname === '/console') {
-        syncSearchState(null, null);
-      } else {
-        navigate('/console', { replace: true });
-      }
-    }
-  }, [
-    activeChannel,
-    activeSection,
-    allowedSections,
-    availableCards,
-    location.pathname,
-    navigate,
-    tenantContextQuery.isLoading,
-    visibleChannels,
-  ]);
-
-  const selectChannel = (channel: ConsoleChannel) => {
-    if (!visibleChannels.includes(channel)) {
-      return;
-    }
-    setActiveChannel(channel);
-    setActiveSection(null);
-    if (location.pathname === '/console') {
-      syncSearchState(channel, null);
-    }
-  };
-
-  const openSection = (section: ConsoleSection) => {
-    const channel = SECTION_TO_CHANNEL[section];
-    setActiveChannel(channel);
-    setActiveSection(section);
-    const directPath = resolveDirectPathForSection(section);
-    if (directPath) {
-      navigate(directPath);
-      return;
-    }
-    navigate(buildConsoleStatePath(channel, section));
-  };
-
-  const openOrdersCreation = () => {
-    setHomeOrdersCreateToken((current) => current + 1);
-  };
-
-  const openAlertsSection = () => {
-    setActiveChannel(null);
-    setActiveSection(null);
-    navigate('/console/alerts');
-  };
-
-  const openSystemHubSection = () => {
-    navigate('/console/system/settings');
-  };
-
-  const openSystemCenterSection = () => {
-    setActiveChannel('system');
-    setActiveSection('staff');
-    navigate('/console/system');
-  };
-
-  const openPlansSection = () => {
-    setActiveChannel(null);
-    setActiveSection(null);
-    navigate('/console/plans');
-  };
-
-  const openMobileSystemTarget = () => {
-    if (hasSettingsAccess) {
-      openSystemHubSection();
-      return;
-    }
-    if (hasSystemAccess) {
-      openSystemCenterSection();
-    }
-  };
-
   useEffect(() => {
     if (searchParams.get('section') === 'settings') {
       navigate('/console/system/settings', { replace: true });
@@ -832,7 +835,7 @@ export function ConsolePage() {
   };
 
   return (
-    <div className="console-theme h-screen overflow-hidden bg-[var(--console-page-bg)] text-[var(--text-primary)]">
+    <div className="console-theme h-screen overflow-hidden bg-transparent text-[var(--text-primary)]">
       <div className="flex h-full flex-col">
         <header className="console-header-layer border-b border-[var(--console-border)] px-3 py-2 tablet:px-6 tablet:py-3">
           <div className="tablet:hidden">
@@ -846,18 +849,6 @@ export function ConsolePage() {
               </div>
 
               <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={openPlansSection}
-                  className={`${HEADER_ICON_BUTTON_CLASS} ${
-                    isPlansActive ? 'border-[#b98757] bg-[var(--surface-card-hover)] text-[var(--text-primary)]' : ''
-                  }`}
-                  aria-label="الإضافات"
-                  title="الإضافات"
-                >
-                  <Layers3 className="h-5 w-5" />
-                  <span className="text-[10px] font-bold leading-none">الإضافات</span>
-                </button>
                 <button
                   type="button"
                   onClick={toggleTheme}
@@ -897,18 +888,6 @@ export function ConsolePage() {
                   <Cog className="h-5 w-5" />
                 </button>
               ) : null}
-
-              <button
-                type="button"
-                onClick={openPlansSection}
-                className={`btn-secondary ui-size-sm !h-12 !w-12 !px-0 ${
-                  isPlansActive ? 'border-[#b98757] bg-[var(--surface-card-hover)] text-[var(--text-primary)]' : ''
-                }`}
-                aria-label="الإضافات"
-                title="الإضافات"
-              >
-                <Layers3 className="h-5 w-5" />
-              </button>
 
               <button
                 type="button"
@@ -1099,7 +1078,7 @@ export function ConsolePage() {
                 <button
                   type="button"
                   onClick={logout}
-                  className={`${MOBILE_BOTTOM_NAV_BUTTON_CLASS} border-rose-300 bg-rose-100/85 text-rose-900 hover:border-rose-400 hover:bg-rose-100 hover:text-rose-950`}
+                  className={`${MOBILE_BOTTOM_NAV_BUTTON_CLASS} border-rose-300 bg-rose-100/80 text-rose-900 hover:border-rose-400 hover:bg-rose-100 hover:text-rose-950`}
                   aria-label="تسجيل الخروج"
                   title="تسجيل الخروج"
                 >
