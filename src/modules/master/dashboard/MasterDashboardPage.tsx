@@ -1,8 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
-import { CheckCircle2, CircleSlash2, Layers3 } from 'lucide-react';
+import { CheckCircle2, Layers3, PauseCircle, ShieldCheck } from 'lucide-react';
 
 import { api } from '@/shared/api/client';
-import { getCapabilityModeClass, getCapabilityModeLabel, getMasterOverviewIcon, getMasterToneClasses } from '../data/masterReadModel';
+import { getCapabilityModeClass, getCapabilityModeLabel, getMasterOverviewIcon } from '../data/masterReadModel';
+
+function sectionCardClass(tone: 'blue' | 'green' | 'amber') {
+  if (tone === 'green') return 'border-emerald-200 bg-emerald-50';
+  if (tone === 'amber') return 'border-amber-200 bg-amber-50';
+  return 'border-sky-200 bg-sky-50';
+}
 
 export function MasterDashboardPage() {
   const overviewQuery = useQuery({
@@ -16,20 +22,23 @@ export function MasterDashboardPage() {
   });
 
   if (overviewQuery.isLoading || addonsQuery.isLoading) {
-    return <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 text-sm font-bold text-slate-300">جارٍ تحميل المتابعة...</div>;
+    return <div className="rounded-3xl border border-[#e6edf5] bg-[#f8fbff] p-5 text-sm font-bold text-[#607080]">جارٍ تحميل المتابعة...</div>;
   }
 
   if (overviewQuery.isError || addonsQuery.isError || !overviewQuery.data || !addonsQuery.data) {
     const error =
       (overviewQuery.error instanceof Error && overviewQuery.error.message) ||
       (addonsQuery.error instanceof Error && addonsQuery.error.message) ||
-      'تعذر تحميل بيانات اللوحة الأم الآن.';
+      'تعذر تحميل بيانات اللوحة الآن.';
 
-    return <div className="rounded-3xl border border-rose-400/30 bg-rose-500/10 p-5 text-sm font-bold text-rose-100">{error}</div>;
+    return <div className="rounded-3xl border border-rose-200 bg-rose-50 p-5 text-sm font-bold text-rose-700">{error}</div>;
   }
 
   const overview = overviewQuery.data;
   const addons = addonsQuery.data;
+  const activeAddon = addons.filter((addon) => addon.status === 'active').length;
+  const passiveAddon = addons.filter((addon) => addon.status === 'passive').length;
+  const pausedAddon = addons.filter((addon) => addon.status === 'paused').length;
 
   return (
     <div className="space-y-5">
@@ -37,141 +46,119 @@ export function MasterDashboardPage() {
         {overview.stats.map((stat) => {
           const Icon = getMasterOverviewIcon(stat.icon_key);
           return (
-            <article
-              key={stat.id}
-              className={`rounded-[26px] border border-white/10 bg-gradient-to-l p-4 shadow-[0_22px_65px_rgba(0,0,0,0.24)] ${getMasterToneClasses(stat.tone)}`}
-            >
+            <article key={stat.id} className="rounded-[24px] border border-[#e6edf5] bg-white p-4 shadow-sm">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs font-black tracking-[0.18em] text-white/70">{stat.label}</p>
-                  <p className="mt-3 text-3xl font-black text-white">{stat.value}</p>
+                  <p className="text-xs font-black tracking-[0.16em] text-[#6a7a8c]">{stat.label}</p>
+                  <p className="mt-3 text-3xl font-black text-[#1b2430]">{stat.value}</p>
                 </div>
-                <span className="inline-flex h-12 w-12 items-center justify-center rounded-3xl border border-white/10 bg-white/10 text-current">
+                <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-[#e6edf5] bg-[#f8fbff] text-[#114488]">
                   <Icon className="h-5 w-5" />
                 </span>
               </div>
-              <p className="mt-4 text-sm font-semibold text-white/80">{stat.detail}</p>
+              <p className="mt-4 text-sm font-semibold text-[#607080]">{stat.detail}</p>
             </article>
           );
         })}
       </section>
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
-        <section className="rounded-[28px] border border-white/10 bg-slate-950/45 p-5">
-          <div className="grid gap-3 md:grid-cols-2">
-            <article className="rounded-3xl border border-emerald-400/25 bg-emerald-500/10 p-4">
-              <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-emerald-400/25 bg-emerald-500/15 text-emerald-100">
+        <section className="space-y-4 rounded-[28px] border border-[#e6edf5] bg-white p-5 shadow-sm">
+          <div className="space-y-1">
+            <p className="text-xs font-black tracking-[0.18em] text-[#6a7a8c]">المتابعة العامة</p>
+            <h3 className="text-lg font-black text-[#1b2430]">وضع النظام الآن</h3>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-3">
+            <article className={`rounded-[22px] border p-4 ${sectionCardClass('green')}`}>
+              <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-emerald-200 bg-white text-emerald-700">
                 <CheckCircle2 className="h-5 w-5" />
               </div>
-              <h4 className="mt-3 text-sm font-black text-white">مفعّل داخل النسخة</h4>
-              <p className="mt-1 text-sm font-semibold text-emerald-100/90">أدوات يراها صاحب المطعم مباشرة داخل نسخته.</p>
+              <p className="mt-3 text-sm font-black text-emerald-900">الأدوات العاملة</p>
+              <p className="mt-1 text-sm font-semibold text-emerald-800">عدد الأدوات المفعلة الآن داخل النسخ: {activeAddon}</p>
             </article>
-            <article className="rounded-3xl border border-amber-400/25 bg-amber-500/10 p-4">
-              <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-amber-400/25 bg-amber-500/15 text-amber-100">
-                <CircleSlash2 className="h-5 w-5" />
+
+            <article className={`rounded-[22px] border p-4 ${sectionCardClass('blue')}`}>
+              <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-sky-200 bg-white text-sky-700">
+                <ShieldCheck className="h-5 w-5" />
               </div>
-              <h4 className="mt-3 text-sm font-black text-white">مغلق حتى التفعيل</h4>
-              <p className="mt-1 text-sm font-semibold text-amber-100/90">أدوات لا تدخل دورة المطعم قبل فتحها من اللوحة الأم.</p>
+              <p className="mt-3 text-sm font-black text-sky-900">الأدوات الصامتة</p>
+              <p className="mt-1 text-sm font-semibold text-sky-800">الأدوات التي تستقبل البيانات بصمت: {passiveAddon}</p>
+            </article>
+
+            <article className={`rounded-[22px] border p-4 ${sectionCardClass('amber')}`}>
+              <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-amber-200 bg-white text-amber-700">
+                <PauseCircle className="h-5 w-5" />
+              </div>
+              <p className="mt-3 text-sm font-black text-amber-900">الأدوات الموقوفة</p>
+              <p className="mt-1 text-sm font-semibold text-amber-800">إيقاف مؤقت محفوظ مع الاحتفاظ بالبيانات: {pausedAddon}</p>
             </article>
           </div>
 
-          <div className="mt-5 rounded-[26px] border border-white/10 bg-white/[0.03] p-4">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-xs font-black tracking-[0.18em] text-cyan-200">الإشارات</p>
-                <h4 className="mt-1 text-base font-black text-white">الوضع الحالي</h4>
+          <div className="grid gap-3 md:grid-cols-2">
+            {overview.signals.map((signal) => (
+              <div key={signal.label} className="rounded-[22px] border border-[#e6edf5] bg-[#f8fbff] px-4 py-3">
+                <p className="text-[11px] font-black tracking-[0.16em] text-[#6a7a8c]">{signal.label}</p>
+                <p className="mt-2 text-sm font-bold text-[#1b2430]">{signal.value}</p>
               </div>
-              <span className="rounded-full border border-cyan-400/30 bg-cyan-500/10 px-3 py-1 text-sm font-black text-cyan-100">
-                {overview.base_clients_count}
-              </span>
-            </div>
-            <div className="mt-4 space-y-3">
-              {overview.signals.map((signal) => (
-                <div key={signal.label} className="rounded-2xl border border-white/10 bg-slate-950/55 px-4 py-3">
-                  <p className="text-xs font-black tracking-[0.18em] text-slate-400">{signal.label}</p>
-                  <p className="mt-1 text-sm font-bold text-white">{signal.value}</p>
-                </div>
-              ))}
-            </div>
+            ))}
           </div>
         </section>
 
-        <section className="space-y-4">
-          <article className="rounded-[28px] border border-white/10 bg-slate-950/45 p-5">
-            <div className="flex items-center gap-3">
-              <span className="inline-flex h-11 w-11 items-center justify-center rounded-3xl border border-violet-400/25 bg-violet-500/10 text-violet-100">
-                <Layers3 className="h-5 w-5" />
-              </span>
-              <div>
-                <p className="text-xs font-black tracking-[0.18em] text-violet-200">الترتيب</p>
-                <h3 className="text-lg font-black text-white">سلسلة فتح الأدوات</h3>
+        <section className="space-y-4 rounded-[28px] border border-[#e6edf5] bg-white p-5 shadow-sm">
+          <div className="flex items-center gap-3">
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-[#dbe7f4] bg-[#eef5ff] text-[#114488]">
+              <Layers3 className="h-5 w-5" />
+            </span>
+            <div>
+              <p className="text-xs font-black tracking-[0.18em] text-[#6a7a8c]">التفعيل</p>
+              <h3 className="text-lg font-black text-[#1b2430]">سلسلة فتح الأدوات</h3>
+            </div>
+          </div>
+          <div className="space-y-3">
+            {addons.map((addon) => (
+              <div key={addon.id} className="rounded-[22px] border border-[#e6edf5] bg-[#f8fbff] px-4 py-3">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-black text-[#1b2430]">{addon.name}</p>
+                  <span className="rounded-full border border-[#dbe7f4] bg-white px-3 py-1 text-xs font-black text-[#114488]">
+                    {addon.sequence}
+                  </span>
+                </div>
+                <p className="mt-2 text-sm font-semibold text-[#607080]">{addon.unlock_note}</p>
               </div>
-            </div>
-            <div className="mt-4 space-y-3">
-              {addons.map((addon) => (
-                <div key={addon.id} className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm font-black text-white">{addon.name}</p>
-                    <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-xs font-black text-cyan-100">
-                      #{addon.sequence}
-                    </span>
-                  </div>
-                  <p className="mt-2 text-sm font-semibold text-slate-300">{addon.unlock_note}</p>
-                </div>
-              ))}
-            </div>
-          </article>
-
-          <article className="rounded-[28px] border border-white/10 bg-slate-950/45 p-5">
-            <p className="text-xs font-black tracking-[0.18em] text-emerald-200">آخر النسخ</p>
-            <h3 className="mt-1 text-lg font-black text-white">أحدث السجلات</h3>
-            <div className="mt-4 space-y-3">
-              {overview.latest_tenants.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.03] p-4 text-sm font-semibold text-slate-400">
-                  لا توجد نسخ بعد.
-                </div>
-              ) : (
-                overview.latest_tenants.map((tenant) => (
-                  <div key={tenant.tenant_id} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-                    <p className="text-sm font-black text-white">{tenant.brand_name}</p>
-                    <p className="mt-1 text-xs font-semibold text-slate-400" dir="ltr">
-                      {tenant.code}
-                    </p>
-                    <p className="mt-2 text-sm font-semibold text-cyan-100">{tenant.activation_stage_name}</p>
-                  </div>
-                ))
-              )}
-            </div>
-          </article>
+            ))}
+          </div>
         </section>
       </div>
 
-      <section className="rounded-[28px] border border-white/10 bg-slate-950/45 p-5">
+      <section className="rounded-[28px] border border-[#e6edf5] bg-white p-5 shadow-sm">
         <div className="space-y-1">
-          <p className="text-xs font-black tracking-[0.18em] text-cyan-200">الإضافات</p>
-          <h3 className="text-lg font-black text-white">مصفوفة الأدوات</h3>
+          <p className="text-xs font-black tracking-[0.18em] text-[#6a7a8c]">كتالوج الأدوات</p>
+          <h3 className="text-lg font-black text-[#1b2430]">مصوفة الحالات الحالية</h3>
         </div>
         <div className="mt-4 grid gap-4 xl:grid-cols-3">
           {addons.map((addon) => (
-            <article key={addon.id} className="rounded-[24px] border border-white/10 bg-white/[0.03] p-4">
-              <div className="flex items-center justify-between gap-3">
+            <article key={addon.id} className="rounded-[24px] border border-[#e6edf5] bg-[#fbfdff] p-4">
+              <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h4 className="text-base font-black text-white">{addon.name}</h4>
-                  <p className="text-sm font-semibold text-slate-300">{addon.description}</p>
+                  <h4 className="text-base font-black text-[#1b2430]">{addon.name}</h4>
+                  <p className="mt-1 text-sm font-semibold text-[#607080]">{addon.description}</p>
                 </div>
-                <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-sm font-black text-cyan-100">
-                  #{addon.sequence}
+                <span className="rounded-full border border-[#dbe7f4] bg-white px-3 py-1 text-xs font-black text-[#114488]">
+                  {addon.status}
                 </span>
               </div>
+
               <div className="mt-4 space-y-2">
                 {addon.capabilities.map((capability) => (
-                  <div key={capability.key} className="rounded-2xl border border-white/10 bg-slate-950/55 px-3 py-3">
+                  <div key={capability.key} className="rounded-2xl border border-[#e6edf5] bg-white px-3 py-3">
                     <div className="flex items-center justify-between gap-3">
-                      <span className="text-sm font-black text-white">{capability.label}</span>
+                      <span className="text-sm font-black text-[#1b2430]">{capability.label}</span>
                       <span className={`rounded-full border px-3 py-1 text-xs font-black ${getCapabilityModeClass(capability.mode)}`}>
                         {getCapabilityModeLabel(capability.mode)}
                       </span>
                     </div>
+                    <p className="mt-2 text-xs font-semibold text-[#607080]">{capability.detail}</p>
                   </div>
                 ))}
               </div>
