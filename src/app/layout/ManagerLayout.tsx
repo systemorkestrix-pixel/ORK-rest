@@ -5,6 +5,7 @@ import {
   Activity,
   ArrowRight,
   Boxes,
+  ChefHat,
   ClipboardList,
   Clock3,
   LogOut,
@@ -25,6 +26,7 @@ const DOMAIN_ICONS: Record<AlertDomainKey, LucideIcon> = {
   inventory: Boxes,
   financial: Wallet,
   delivery: Truck,
+  kitchen: ChefHat,
   system: Settings,
   audit: ShieldCheck,
 };
@@ -108,9 +110,9 @@ function ManagerShell() {
   const sectionDescription = currentSection?.description ?? 'مركز متابعة وتشغيل موحّد لكامل النظام.';
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900">
+    <div className="min-h-screen bg-transparent text-gray-900">
       <div className="flex min-h-screen flex-col">
-        <header className="sticky top-0 z-30 border-b border-brand-100 bg-white/95 shadow-sm backdrop-blur">
+        <header className="sticky top-0 z-50 border-b border-brand-100 bg-white/95 shadow-sm backdrop-blur">
           <div className="w-full px-4 py-3 md:px-6 lg:px-8">
             <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-stretch">
               <div className="grid w-full gap-2 sm:grid-cols-2 xl:grid-cols-3">
@@ -197,7 +199,7 @@ function ManagerShell() {
           </div>
         </header>
 
-        <main className="flex-1 overflow-x-hidden">
+        <main className="relative z-0 flex-1 overflow-x-hidden">
           <div className="w-full px-4 py-4 md:px-6 lg:px-8">
             <section className="rounded-2xl border border-brand-100 bg-white px-4 py-2.5">
               <div className="flex flex-wrap items-center justify-between gap-2">
