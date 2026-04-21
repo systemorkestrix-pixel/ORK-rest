@@ -1,6 +1,6 @@
 ﻿import { createContext, type PropsWithChildren, useCallback, useContext, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Bell, Layers3, Settings, Users } from 'lucide-react';
+import { Bell, Settings, Users } from 'lucide-react';
 
 import { useAuthStore } from '@/modules/auth/store';
 import {
@@ -60,15 +60,6 @@ export function ManagerNavigationProvider({ children }: PropsWithChildren) {
         capability: 'manager.settings.view',
         description: 'إعدادات محلية تخص الواجهة العامة والحساب فقط.',
         icon: Settings,
-      };
-    }
-    if (location.pathname.startsWith('/console/plans')) {
-      return {
-        to: '/console/plans',
-        label: 'الإضافات',
-        capability: 'manager.dashboard.view',
-        description: 'عرض الأدوات المفعلة الآن، وما الأداة التالية التي يمكن فتحها.',
-        icon: Layers3,
       };
     }
     if (location.pathname.startsWith('/console/system/users')) {
