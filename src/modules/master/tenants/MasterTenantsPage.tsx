@@ -340,7 +340,32 @@ export function MasterTenantsPage() {
     setCreateError(null);
   }
 
+  function closeCreateModal() {
+    setCreateOpen(false);
+    resetCreate();
+  }
+
+  function closeEditModal() {
+    setEditingTenant(null);
+    setEditError(null);
+    setRegeneratedAccess(null);
+    setAddonActionId(null);
+  }
+
+  function closeDeleteModal() {
+    setDeleteTarget(null);
+  }
+
+  function openCreateModal() {
+    closeEditModal();
+    closeDeleteModal();
+    resetCreate();
+    setCreateOpen(true);
+  }
+
   function openEditTenant(tenant: MasterTenant) {
+    closeCreateModal();
+    closeDeleteModal();
     setEditingTenant(tenant);
     setEditClientOwnerName(tenant.client_owner_name);
     setEditClientBrandName(tenant.client_brand_name);
@@ -429,7 +454,7 @@ export function MasterTenantsPage() {
 
   if (tenantsQuery.isLoading || clientsQuery.isLoading || addonsQuery.isLoading) {
     return (
-      <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 text-sm font-bold text-slate-300">
+      <div className="rounded-3xl border border-[#e6edf5] bg-[#f8fbff] p-5 text-sm font-bold text-[#607080]">
         جارٍ تحميل النسخ...
       </div>
     );
@@ -437,7 +462,7 @@ export function MasterTenantsPage() {
 
   if (pageError || !tenantsQuery.data || !clientsQuery.data || !addonsQuery.data) {
     return (
-      <div className="rounded-3xl border border-rose-400/30 bg-rose-500/10 p-5 text-sm font-bold text-rose-100">
+      <div className="rounded-3xl border border-rose-200 bg-rose-50 p-5 text-sm font-bold text-rose-700">
         {pageError || 'تعذر تحميل النسخ الآن.'}
       </div>
     );
@@ -445,7 +470,7 @@ export function MasterTenantsPage() {
 
   return (
     <div className="space-y-5">
-      <section className="rounded-[28px] border border-white/10 bg-slate-950/45 p-5">
+      <section className="rounded-[28px] border border-[#e6edf5] bg-[#f8fbff] p-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-1">
             <p className="text-xs font-black tracking-[0.18em] text-cyan-200">النسخ التشغيلية</p>
@@ -453,20 +478,17 @@ export function MasterTenantsPage() {
           </div>
           <button
             type="button"
-            onClick={() => {
-              resetCreate();
-              setCreateOpen(true);
-            }}
-            className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-gradient-to-l from-emerald-500 to-cyan-500 px-5 text-sm font-black text-slate-950 transition hover:from-emerald-400 hover:to-cyan-400"
+            onClick={openCreateModal}
+            className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#114488] px-5 text-sm font-black text-white transition hover:bg-[#0d356a]"
           >
             <Plus className="h-4 w-4" />
             <span>إنشاء نسخة جديدة</span>
           </button>
         </div>
 
-        <div className="mt-5 overflow-x-auto rounded-[24px] border border-white/10">
-          <table className="min-w-full divide-y divide-white/10 text-right">
-            <thead className="bg-white/[0.04] text-slate-200">
+        <div className="mt-5 overflow-x-auto rounded-[24px] border border-[#e6edf5] bg-white">
+          <table className="min-w-full divide-y divide-[#e6edf5] text-right">
+            <thead className="bg-[#f3f7fb] text-[#304050]">
               <tr>
                 <th className="px-4 py-3 text-sm font-black">النسخة</th>
                 <th className="px-4 py-3 text-sm font-black">العميل</th>
@@ -476,21 +498,21 @@ export function MasterTenantsPage() {
                 <th className="px-4 py-3 text-sm font-black">الإجراءات</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/10 bg-slate-950/35">
+            <tbody className="divide-y divide-[#eef2f6] bg-white">
               {tenantsQuery.data.map((tenant) => (
-                <tr key={tenant.id} className="align-top text-slate-100">
+                <tr key={tenant.id} className="align-top text-[#1b2430]">
                   <td className="px-4 py-4">
                     <p className="text-sm font-black">{tenant.brand_name}</p>
-                    <p className="mt-1 text-xs font-semibold text-slate-400" dir="ltr">
+                    <p className="mt-1 text-xs font-semibold text-[#708090]" dir="ltr">
                       {tenant.code}
                     </p>
                   </td>
                   <td className="px-4 py-4">
                     <p className="text-sm font-black">{tenant.client_owner_name}</p>
-                    <p className="mt-1 text-xs font-semibold text-slate-400">{tenant.client_brand_name}</p>
+                    <p className="mt-1 text-xs font-semibold text-[#708090]">{tenant.client_brand_name}</p>
                   </td>
                   <td className="px-4 py-4">
-                    <span className="inline-flex rounded-full border border-cyan-400/30 bg-cyan-500/10 px-3 py-1 text-xs font-black text-cyan-100">
+                    <span className="inline-flex rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-black text-sky-800">
                       {tenant.current_stage_name}
                     </span>
                   </td>
@@ -507,7 +529,7 @@ export function MasterTenantsPage() {
                     <p className="text-sm font-black" dir="ltr">
                       {tenant.manager_username}
                     </p>
-                    <p className="mt-1 text-xs font-semibold text-slate-400" dir="ltr">
+                    <p className="mt-1 text-xs font-semibold text-[#708090]" dir="ltr">
                       {tenant.manager_login_path}
                     </p>
                   </td>
@@ -539,7 +561,7 @@ export function MasterTenantsPage() {
 
       <Modal
         open={createOpen}
-        onClose={() => setCreateOpen(false)}
+        onClose={closeCreateModal}
         title="إنشاء نسخة جديدة"
         footer={
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -556,7 +578,7 @@ export function MasterTenantsPage() {
               ) : null}
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <button type="button" onClick={() => setCreateOpen(false)} className="btn-secondary ui-size-sm px-4">
+              <button type="button" onClick={closeCreateModal} className="btn-secondary ui-size-sm px-4">
                 إغلاق
               </button>
               {createStep !== 'access' ? (
@@ -679,11 +701,35 @@ export function MasterTenantsPage() {
 
       <Modal
         open={Boolean(editingTenant)}
-        onClose={() => setEditingTenant(null)}
+        onClose={closeEditModal}
         title="تعديل العميل والنسخة"
         footer={
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            <button type="button" onClick={() => setEditingTenant(null)} className="btn-secondary ui-size-sm px-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              {editingTenant ? (
+                <button
+                  type="button"
+                  onClick={() => toggleMutation.mutate(editingTenant.id)}
+                  disabled={toggleMutation.isPending}
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-amber-300 bg-amber-50 px-4 text-sm font-black text-amber-900 transition hover:bg-amber-100 disabled:cursor-wait disabled:opacity-60"
+                >
+                  {editingTenant.environment_state === 'suspended' ? <PlayCircle className="h-4 w-4" /> : <PauseCircle className="h-4 w-4" />}
+                  <span>{editingTenant.environment_state === 'suspended' ? 'استئناف النسخة' : 'إيقاف النسخة مؤقتًا'}</span>
+                </button>
+              ) : null}
+              {editingTenant ? (
+                <button
+                  type="button"
+                  onClick={() => setDeleteTarget(editingTenant)}
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-rose-300 bg-rose-50 px-4 text-sm font-black text-rose-700 transition hover:bg-rose-100"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  <span>حذف النسخة</span>
+                </button>
+              ) : null}
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <button type="button" onClick={closeEditModal} className="btn-secondary ui-size-sm px-4">
               إغلاق
             </button>
             <button
@@ -694,7 +740,8 @@ export function MasterTenantsPage() {
             >
               <ShieldCheck className="h-4 w-4" />
               <span>{updateMutation.isPending ? 'جارٍ الحفظ...' : 'حفظ التعديل'}</span>
-            </button>
+              </button>
+            </div>
           </div>
         }
       >
@@ -849,11 +896,11 @@ export function MasterTenantsPage() {
 
       <Modal
         open={Boolean(deleteTarget)}
-        onClose={() => setDeleteTarget(null)}
+        onClose={closeDeleteModal}
         title="حذف النسخة"
         footer={
           <div className="flex flex-wrap items-center justify-end gap-2">
-            <button type="button" onClick={() => setDeleteTarget(null)} className="btn-secondary ui-size-sm px-4">
+            <button type="button" onClick={closeDeleteModal} className="btn-secondary ui-size-sm px-4">
               إغلاق
             </button>
             <button

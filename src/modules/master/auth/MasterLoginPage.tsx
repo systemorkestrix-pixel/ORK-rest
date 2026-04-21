@@ -1,8 +1,7 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { LockKeyhole, ShieldCheck, Sparkles, UserRound } from 'lucide-react';
+import { LockKeyhole, ShieldCheck, UserRound } from 'lucide-react';
 
-import { masterInitialAccess } from '../data/masterReadModel';
 import { useMasterAuthStore } from './masterAuthStore';
 
 export function MasterLoginPage() {
@@ -14,8 +13,9 @@ export function MasterLoginPage() {
   const clearLoginError = useMasterAuthStore((state) => state.clearLoginError);
   const status = useMasterAuthStore((state) => state.status);
   const hydrateSession = useMasterAuthStore((state) => state.hydrateSession);
-  const [username, setUsername] = useState(masterInitialAccess.username);
-  const [password, setPassword] = useState(masterInitialAccess.password);
+
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
 
   useEffect(() => {
     if (status === 'idle') {
@@ -43,77 +43,82 @@ export function MasterLoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(13,148,136,0.18),_transparent_28%),radial-gradient(circle_at_bottom,_rgba(8,47,73,0.38),_transparent_36%),linear-gradient(160deg,_#07111f_0%,_#091728_52%,_#030711_100%)] text-slate-100">
-      <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col justify-center gap-8 px-4 py-8 lg:grid lg:grid-cols-[minmax(0,1.2fr)_minmax(420px,0.9fr)] lg:items-center lg:px-8">
+    <div className="min-h-screen bg-transparent text-[var(--app-text)]">
+      <div className="mx-auto grid min-h-screen w-full max-w-6xl items-center gap-8 px-4 py-8 lg:grid-cols-[minmax(0,1.15fr)_440px] lg:px-8">
         <section className="space-y-6">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold text-emerald-200 backdrop-blur">
+          <div className="inline-flex items-center gap-2 rounded-full border border-[#dbe7f4] bg-[#eef5ff] px-4 py-2 text-sm font-bold text-[#114488]">
             <ShieldCheck className="h-4 w-4" />
-            <span>اللوحة الأم</span>
+            <span>الإدارة المركزية</span>
           </div>
+
           <div className="space-y-3">
-            <h1 className="text-3xl font-black leading-tight text-white sm:text-4xl lg:text-5xl">
-              إدارة العملاء والنسخ والإضافات من لوحة مستقلة
+            <h1 className="text-3xl font-black leading-tight text-[var(--app-text)] sm:text-4xl lg:text-5xl">
+              إدارة العملاء والنسخ من لوحة موحدة وواضحة
             </h1>
-            <p className="max-w-2xl text-sm font-semibold leading-7 text-slate-300 sm:text-base">
-              هذه الجلسة مستقلة عن أي لوحة مطعم. من هنا نتابع العملاء، ننشئ النسخ، ونفتح الأدوات لكل مطعم بالترتيب الصحيح.
+            <p className="max-w-2xl text-sm font-semibold leading-7 text-slate-200/90 sm:text-base">
+              هذه الجلسة مستقلة بالكامل عن جلسات المطاعم. من هنا تتم متابعة العملاء، إنشاء النسخ، والتحكم في التفعيل التشغيلي من مكان واحد.
             </p>
           </div>
+
           <div className="grid gap-3 md:grid-cols-3">
-            <article className="rounded-3xl border border-white/10 bg-white/5 p-4 shadow-[0_24px_80px_rgba(0,0,0,0.28)] backdrop-blur">
-              <p className="text-xs font-black tracking-[0.18em] text-emerald-200">العملاء</p>
-              <p className="mt-3 text-sm font-bold text-white">سجل مركزي واضح لكل عميل ونسخته الحالية.</p>
+            <article className="rounded-3xl border border-[#e6edf5] bg-white p-4 shadow-sm">
+              <p className="text-xs font-black tracking-[0.18em] text-[#6a7a8c]">العملاء</p>
+              <p className="mt-3 text-sm font-bold text-[#1b2430]">سجل واضح لكل عميل وربطه بنسخته الحالية.</p>
             </article>
-            <article className="rounded-3xl border border-white/10 bg-white/5 p-4 shadow-[0_24px_80px_rgba(0,0,0,0.28)] backdrop-blur">
-              <p className="text-xs font-black tracking-[0.18em] text-cyan-200">النسخ</p>
-              <p className="mt-3 text-sm font-bold text-white">كل مطعم يعمل ضمن Tenant مستقل.</p>
+            <article className="rounded-3xl border border-[#e6edf5] bg-white p-4 shadow-sm">
+              <p className="text-xs font-black tracking-[0.18em] text-[#6a7a8c]">النسخ</p>
+              <p className="mt-3 text-sm font-bold text-[#1b2430]">كل مطعم يعمل على نسخة مستقلة ومحكومة.</p>
             </article>
-            <article className="rounded-3xl border border-white/10 bg-white/5 p-4 shadow-[0_24px_80px_rgba(0,0,0,0.28)] backdrop-blur">
-              <p className="text-xs font-black tracking-[0.18em] text-violet-200">التفعيل</p>
-              <p className="mt-3 text-sm font-bold text-white">الأدوات تُفتح على النسخة بشكل مرتب ومنضبط.</p>
+            <article className="rounded-3xl border border-[#e6edf5] bg-white p-4 shadow-sm">
+              <p className="text-xs font-black tracking-[0.18em] text-[#6a7a8c]">التفعيل</p>
+              <p className="mt-3 text-sm font-bold text-[#1b2430]">فتح الأدوات وإيقافها يتم ضمن مسار واحد منضبط.</p>
             </article>
           </div>
         </section>
 
-        <section className="rounded-[32px] border border-white/10 bg-slate-950/55 p-5 shadow-[0_28px_120px_rgba(0,0,0,0.35)] backdrop-blur sm:p-7">
+        <section className="rounded-[32px] border border-[#e6edf5] bg-white p-6 shadow-[0_24px_60px_rgba(27,36,48,0.08)] sm:p-7">
           <div className="space-y-2">
-            <div className="inline-flex h-14 w-14 items-center justify-center rounded-3xl border border-emerald-400/30 bg-emerald-400/10 text-emerald-200">
-              <Sparkles className="h-6 w-6" />
+            <div className="inline-flex h-14 w-14 items-center justify-center rounded-3xl border border-[#dbe7f4] bg-[#eef5ff] text-[#114488]">
+              <ShieldCheck className="h-6 w-6" />
             </div>
-            <h2 className="text-2xl font-black text-white">دخول الإدارة المركزية</h2>
-            <p className="text-sm font-semibold text-slate-300">جلسة منفصلة بالكامل عن جلسات المطاعم.</p>
+            <h2 className="text-2xl font-black text-[#1b2430]">دخول الإدارة المركزية</h2>
+            <p className="text-sm font-semibold text-[#607080]">أدخل بيانات الحساب المركزي للوصول إلى لوحة التحكم.</p>
           </div>
 
           <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
             <label className="block space-y-2">
-              <span className="text-sm font-bold text-slate-200">اسم الدخول</span>
+              <span className="text-sm font-bold text-[#405060]">اسم المستخدم</span>
               <span className="relative block">
-                <UserRound className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <UserRound className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8092a5]" />
                 <input
                   dir="ltr"
-                  className="h-12 w-full rounded-2xl border border-white/10 bg-white/5 pr-11 pl-4 text-sm font-semibold text-white outline-none transition placeholder:text-slate-500 focus:border-emerald-400/60 focus:bg-white/[0.07]"
+                  className="h-12 w-full rounded-2xl border border-[#d9e3ef] bg-[#fbfdff] pr-11 pl-4 text-sm font-semibold text-[#1b2430] outline-none transition placeholder:text-[#90a2b4] focus:border-[#9dbdf0] focus:bg-white"
                   value={username}
                   onChange={(event) => setUsername(event.target.value)}
-                  placeholder="owner@master.local"
+                  placeholder="username"
+                  required
                 />
               </span>
             </label>
+
             <label className="block space-y-2">
-              <span className="text-sm font-bold text-slate-200">كلمة المرور</span>
+              <span className="text-sm font-bold text-[#405060]">كلمة المرور</span>
               <span className="relative block">
-                <LockKeyhole className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <LockKeyhole className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8092a5]" />
                 <input
                   dir="ltr"
                   type="password"
-                  className="h-12 w-full rounded-2xl border border-white/10 bg-white/5 pr-11 pl-4 text-sm font-semibold text-white outline-none transition placeholder:text-slate-500 focus:border-emerald-400/60 focus:bg-white/[0.07]"
+                  className="h-12 w-full rounded-2xl border border-[#d9e3ef] bg-[#fbfdff] pr-11 pl-4 text-sm font-semibold text-[#1b2430] outline-none transition placeholder:text-[#90a2b4] focus:border-[#9dbdf0] focus:bg-white"
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
-                  placeholder="Master@2026!"
+                  placeholder="password"
+                  required
                 />
               </span>
             </label>
 
             {loginError ? (
-              <div className="rounded-2xl border border-rose-400/30 bg-rose-500/10 px-4 py-3 text-sm font-bold text-rose-200">
+              <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">
                 {loginError}
               </div>
             ) : null}
@@ -121,26 +126,11 @@ export function MasterLoginPage() {
             <button
               type="submit"
               disabled={status === 'checking'}
-              className="inline-flex h-12 w-full items-center justify-center rounded-2xl bg-gradient-to-l from-emerald-500 to-cyan-500 px-4 text-sm font-black text-slate-950 transition hover:from-emerald-400 hover:to-cyan-400 disabled:cursor-wait disabled:opacity-70"
+              className="inline-flex h-12 w-full items-center justify-center rounded-2xl bg-[#114488] px-4 text-sm font-black text-white transition hover:bg-[#0f3c77] disabled:cursor-wait disabled:opacity-70"
             >
-              {status === 'checking' ? 'جارٍ التحقق...' : 'دخول اللوحة الأم'}
+              {status === 'checking' ? 'جارٍ التحقق...' : 'دخول'}
             </button>
           </form>
-
-          <div className="mt-5 rounded-3xl border border-white/10 bg-white/[0.04] p-4">
-            <p className="text-xs font-black tracking-[0.18em] text-slate-400">الوصول الأولي</p>
-            <div className="mt-3 space-y-2 text-sm font-semibold text-slate-200">
-              <p>
-                <span className="text-slate-400">المسار:</span> <span dir="ltr">{masterInitialAccess.route}</span>
-              </p>
-              <p>
-                <span className="text-slate-400">اسم الدخول:</span> <span dir="ltr">{masterInitialAccess.username}</span>
-              </p>
-              <p>
-                <span className="text-slate-400">كلمة المرور:</span> <span dir="ltr">{masterInitialAccess.password}</span>
-              </p>
-            </div>
-          </div>
         </section>
       </div>
     </div>
