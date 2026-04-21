@@ -15,10 +15,10 @@ export function PublicCartSummaryBar({ itemCount, total, onOpenCheckout }: Publi
 
   return (
     <div className="pointer-events-none sticky bottom-3 z-30 px-1 md:px-0">
-      <div className="pointer-events-auto mx-auto max-w-5xl rounded-[28px] border border-[#eadbc7] bg-[#fffaf3]/96 shadow-[0_22px_48px_rgba(170,126,70,0.18)] backdrop-blur">
+      <div className="pointer-events-auto mx-auto max-w-5xl rounded-[28px] border border-[color:rgba(227,160,86,0.22)] bg-[#fffaf3]/96 shadow-[0_22px_48px_rgba(0,0,0,0.16)] backdrop-blur">
         <div className="grid gap-3 p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:p-4">
           <div className="flex items-center gap-3">
-            <div className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#fff2df] text-[#cf7f2a]">
+            <div className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--brand-gold-soft)] text-[color:var(--brand-gold-strong)]">
               <ShoppingBag className="h-5 w-5" />
             </div>
 
@@ -37,7 +37,7 @@ export function PublicCartSummaryBar({ itemCount, total, onOpenCheckout }: Publi
           <button
             type="button"
             onClick={onOpenCheckout}
-            className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-2xl bg-[#e38b38] px-5 text-sm font-black text-[#1a120d] transition hover:bg-[#ef9a4b] sm:min-w-[220px] sm:w-auto"
+            className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-2xl bg-[var(--brand-gold)] px-5 text-sm font-black text-[#1a120d] transition hover:bg-[var(--brand-gold-strong)] sm:min-w-[220px] sm:w-auto"
           >
             <span>متابعة الطلب</span>
             <ChevronLeft className="h-4 w-4" />

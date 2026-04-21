@@ -64,27 +64,27 @@ export function PublicOrderHeaderCard({
 
       <div className="mt-3 grid gap-2 md:grid-cols-2">
         {bootstrapLoading ? (
-          <p className="rounded-xl border border-sky-300 bg-sky-50 px-3 py-2 text-xs font-semibold text-sky-700">
+          <p className="rounded-xl border border-[color:var(--brand-blue)] bg-[var(--brand-blue-soft)] px-3 py-2 text-xs font-semibold text-[color:var(--brand-blue-strong)]">
             جارٍ تجهيز الواجهة وبيانات الطلب...
           </p>
         ) : null}
         {bootstrapErrorText ? (
-          <p className="rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700">
+          <p className="rounded-xl border border-[color:var(--brand-gold)] bg-[var(--brand-gold-soft)] px-3 py-2 text-xs font-semibold text-[color:var(--brand-gold-strong)]">
             {bootstrapErrorText}
           </p>
         ) : null}
         {!tableId && tablesErrorText ? (
-          <p className="rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700">
+          <p className="rounded-xl border border-[color:var(--brand-gold)] bg-[var(--brand-gold-soft)] px-3 py-2 text-xs font-semibold text-[color:var(--brand-gold-strong)]">
             {tablesErrorText}
           </p>
         ) : null}
         {!tableId && orderType === 'delivery' && deliveryBlockedReason ? (
-          <p className="rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700">
+          <p className="rounded-xl border border-[color:var(--brand-gold)] bg-[var(--brand-gold-soft)] px-3 py-2 text-xs font-semibold text-[color:var(--brand-gold-strong)]">
             {deliveryBlockedReason}
           </p>
         ) : null}
         {tableSessionErrorText ? (
-          <p className="rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700">
+          <p className="rounded-xl border border-[color:var(--brand-gold)] bg-[var(--brand-gold-soft)] px-3 py-2 text-xs font-semibold text-[color:var(--brand-gold-strong)]">
             {tableSessionErrorText}
           </p>
         ) : null}

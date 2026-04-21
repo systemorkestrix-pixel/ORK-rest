@@ -450,7 +450,7 @@ export function PublicCheckoutModal(props: PublicCheckoutModalProps) {
                                   ].join(' ')}
                                 >
                                   <p className="text-xs font-bold text-[#8b735d]">الطاولة</p>
-                                  <p className="mt-1 text-xl font-black">#{table.number}</p>
+                                  <p className="mt-1 text-xl font-black">#{table.id}</p>
                                 </button>
                               );
                             })}
@@ -491,7 +491,7 @@ export function PublicCheckoutModal(props: PublicCheckoutModalProps) {
                           >
                             <div className="flex items-start justify-between gap-3">
                               <div>
-                                <p className="text-base font-black text-[#2d2117]">{option.product_name}</p>
+                                <p className="text-base font-black text-[#2d2117]">{option.name}</p>
                                 <p className="mt-1 text-xs font-semibold text-[#7c6651]">
                                   {option.price.toFixed(2)} د.ج
                                   {option.max_quantity > 0 ? ` • الحد ${option.max_quantity}` : ''}
@@ -502,7 +502,7 @@ export function PublicCheckoutModal(props: PublicCheckoutModalProps) {
                                   type="button"
                                   onClick={() => onSecondaryQuantityChange(option, -1)}
                                   className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-[#eadbc7] bg-[#fffaf3] text-[#4a382a] transition hover:bg-[#fff2df]"
-                                  aria-label={`تقليل ${option.product_name}`}
+                                  aria-label={`تقليل ${option.name}`}
                                 >
                                   -
                                 </button>
@@ -512,7 +512,7 @@ export function PublicCheckoutModal(props: PublicCheckoutModalProps) {
                                   disabled={reachedMax}
                                   onClick={() => onSecondaryQuantityChange(option, 1)}
                                   className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[#e38b38] text-lg font-black text-[#1a120d] transition hover:bg-[#ef9a4b] disabled:cursor-not-allowed disabled:bg-[#edd8bf] disabled:text-[#7c6651]"
-                                  aria-label={`زيادة ${option.product_name}`}
+                                  aria-label={`زيادة ${option.name}`}
                                 >
                                   +
                                 </button>
@@ -546,7 +546,7 @@ export function PublicCheckoutModal(props: PublicCheckoutModalProps) {
                         {secondaryRows.map((item) => (
                           <ReviewRow
                             key={`secondary-${item.option.product_id}`}
-                            label={item.option.product_name}
+                            label={item.option.name}
                             quantity={item.quantity}
                             amount={getRowAmount(item.option.price, item.quantity)}
                           />
@@ -573,7 +573,7 @@ export function PublicCheckoutModal(props: PublicCheckoutModalProps) {
                               ? `#${tableId}`
                               : orderType === 'dine-in'
                                 ? selectedTableInfo
-                                  ? `#${selectedTableInfo.number}`
+                                  ? `#${selectedTableInfo.id}`
                                   : '--'
                                 : 'جاهز للإرسال'
                           }
