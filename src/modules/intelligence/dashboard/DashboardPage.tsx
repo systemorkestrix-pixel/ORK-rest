@@ -159,7 +159,8 @@ export function DashboardPage() {
   }, [operationalHeart]);
 
   const overviewCards = useMemo(
-    () => [
+    () =>
+      [
       {
         label: 'الحالة العامة',
         value: derived.overallMeta.label,
@@ -168,7 +169,11 @@ export function DashboardPage() {
       { label: 'تنبيهات مفتوحة', value: unresolvedCount, tone: unresolvedCount > 0 ? 'warning' : 'success' },
       { label: 'الطلبات النشطة', value: operationalHeart?.kpis.active_orders ?? 0, tone: 'default' },
       { label: 'صافي اليوم', value: asMoney(operationalHeart?.kpis.today_net), tone: 'success' },
-    ],
+    ] satisfies Array<{
+      label: string;
+      value: string | number;
+      tone?: 'default' | 'success' | 'warning' | 'danger' | 'info';
+    }>,
     [derived.overallMeta.label, derived.overallSeverity, operationalHeart?.kpis.active_orders, operationalHeart?.kpis.today_net, unresolvedCount]
   );
 

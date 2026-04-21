@@ -360,7 +360,7 @@ export function DeliverySettingsPage() {
   const structureMetrics = useMemo(
     () => ({
       providers: providers.length,
-      internalDrivers: drivers.filter((driver) => !!driver.provider_is_internal_default).length,
+      internalDrivers: drivers.filter((driver) => driver.provider_type === 'internal_team').length,
       telegramLinked: drivers.filter((driver) => driver.telegram_enabled).length,
     }),
     [drivers, providers]
