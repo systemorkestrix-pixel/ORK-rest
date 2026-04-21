@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { ExternalLink } from 'lucide-react';
 
 import { useAuthStore } from '@/modules/auth/store';
 import { api } from '@/shared/api/client';
@@ -17,6 +18,14 @@ export function StorefrontSettingsPanel() {
   const role = useAuthStore((state) => state.role);
   const queryClient = useQueryClient();
   const [form, setForm] = useState<StorefrontSettings>(defaultStorefrontSettings);
+
+  const publicOrderUrl = useMemo(() => {
+    if (typeof window === 'undefined') {
+      return '/order';
+    }
+    const tenantCode = window.sessionStorage.getItem('active_tenant_code')?.trim();
+    return tenantCode ? `/t/${encodeURIComponent(tenantCode)}/order` : '/order';
+  }, []);
 
   const storefrontQuery = useQuery({
     queryKey: ['manager-storefront-settings'],
@@ -174,6 +183,15 @@ export function StorefrontSettingsPanel() {
 
       {errorText ? <p className="mt-3 text-xs font-semibold text-rose-700">{errorText}</p> : null}
       {updateMutation.isSuccess ? <p className="mt-3 text-xs font-semibold text-emerald-700">تم حفظ هوية الواجهة العامة بنجاح.</p> : null}
+
+      <button
+        type="button"
+        className="btn-secondary mt-4 w-full justify-center"
+        onClick={() => window.open(publicOrderUrl, '_blank', 'noopener,noreferrer')}
+      >
+        <ExternalLink className="h-4 w-4" />
+        <span>فتح الواجهة العامة</span>
+      </button>
 
       <button
         type="button"

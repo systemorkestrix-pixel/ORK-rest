@@ -1,6 +1,6 @@
 ﻿import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Archive, ArrowDown, ArrowDownUp, ArrowUp, Check, Package, PackagePlus, Pencil, Power, RotateCcw, Search, SlidersHorizontal, Trash2 } from 'lucide-react';
+import { Archive, ArrowDown, ArrowDownUp, ArrowUp, Check, ExternalLink, Package, PackagePlus, Pencil, Power, RotateCcw, Search, SlidersHorizontal, Trash2 } from 'lucide-react';
 
 import { useAuthStore } from '@/modules/auth/store';
 import { api } from '@/shared/api/client';
@@ -150,9 +150,9 @@ function getProductInventorySummary(
 ): { badge: string; tone: string; note: string } {
   if (!inventoryToolEnabled) {
     return {
-      badge: 'مجمّد',
+      badge: 'غير متاح',
       tone: 'border border-amber-300 bg-amber-50 text-amber-700',
-      note: warehouseBlockReason ?? 'هذه الأداة تعمل بعد تفعيل نظام المستودع.',
+      note: warehouseBlockReason ?? 'إدارة المكونات غير متاحة في هذه النسخة الحالية.',
     };
   }
   const linkedCount = product.consumption_components.length;
@@ -232,6 +232,14 @@ function resolveCategoryRowTone(active: boolean): 'success' | 'warning' | 'dange
 export function ProductsPage() {
   const role = useAuthStore((state) => state.role);
   const queryClient = useQueryClient();
+
+  const publicOrderUrl = useMemo(() => {
+    if (typeof window === 'undefined') {
+      return '/order';
+    }
+    const tenantCode = window.sessionStorage.getItem('active_tenant_code')?.trim();
+    return tenantCode ? `/t/${encodeURIComponent(tenantCode)}/order` : '/order';
+  }, []);
 
   const [search, setSearch] = useState('');
   const [searchDraft, setSearchDraft] = useState('');
@@ -420,9 +428,10 @@ export function ProductsPage() {
   const warehouseEnabled = operationalCapabilities?.warehouse_enabled ?? true;
   const warehouseBlockReason =
     warehouseChannelEnabled
-      ? operationalCapabilities?.warehouse_block_reason ?? 'هذه الأداة تعمل بعد تفعيل نظام المستودع.'
-      : 'هذه الأداة تعمل بعد تفعيل نظام المستودع.';
+      ? operationalCapabilities?.warehouse_block_reason ?? 'إدارة المكونات غير متاحة في هذه النسخة الحالية.'
+      : 'إدارة المكونات غير متاحة في هذه النسخة الحالية.';
   const inventoryToolEnabled = warehouseChannelEnabled && warehouseFeatureEnabled && warehouseEnabled;
+  const inventoryStepEnabled = inventoryToolEnabled;
   const resolveCategoryId = (product: Product): number => {
     if (product.category_id && product.category_id > 0) {
       return product.category_id;
@@ -728,7 +737,7 @@ export function ProductsPage() {
       ? 'منتج أساسي'
       : 'منتج ثانوي';
   const inventorySummaryLabel = !inventoryToolEnabled
-    ? 'بانتظار تفعيل المستودع'
+    ? 'غير متاح في هذه النسخة'
     : validConsumptionComponents.length > 0
       ? `${validConsumptionComponents.length} صنف مستهلك`
       : 'لا يوجد ربط مخزني';
@@ -775,6 +784,15 @@ export function ProductsPage() {
               >
                 <PackagePlus className="h-4 w-4" />
                 <span>إدراج</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => window.open(publicOrderUrl, '_blank', 'noopener,noreferrer')}
+                className="btn-secondary inline-flex min-h-[42px] w-full items-center justify-center gap-2"
+              >
+                <ExternalLink className="h-4 w-4" />
+                <span>فتح الواجهة العامة</span>
               </button>
             </div>
           </div>
@@ -1633,17 +1651,25 @@ export function ProductsPage() {
           </div>
         ) : (
         <form className="space-y-4" onSubmit={onSubmit}>
-          <div className="grid gap-2 md:grid-cols-4">
+          <div className={`grid gap-2 ${inventoryStepEnabled ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
             {([
               { id: 'identity', label: '1. تعريف المنتج', ready: true },
               { id: 'exposure', label: '2. ظهوره في الطلب', ready: productIdentityReady },
-              { id: 'inventory', label: '3. المكونات', ready: productIdentityReady && productExposureReady },
-              { id: 'review', label: '4. المراجعة', ready: productIdentityReady && productExposureReady && productInventoryReady },
+              ...(inventoryStepEnabled
+                ? [{ id: 'inventory', label: '3. المكونات', ready: productIdentityReady && productExposureReady } as const]
+                : []),
+              {
+                id: 'review',
+                label: inventoryStepEnabled ? '4. المراجعة' : '3. المراجعة',
+                ready: productIdentityReady && productExposureReady && productInventoryReady,
+              },
             ] as Array<{ id: ProductModalStep; label: string; ready: boolean }>).map((stepCard) => {
               const isActive = productStep === stepCard.id;
               const isCompleted =
                 (stepCard.id === 'identity' && productIdentityReady && productStep !== 'identity') ||
-                (stepCard.id === 'exposure' && productExposureReady && ['inventory', 'review'].includes(productStep)) ||
+                (stepCard.id === 'exposure' &&
+                  productExposureReady &&
+                  (inventoryStepEnabled ? ['inventory', 'review'] : ['review']).includes(productStep)) ||
                 (stepCard.id === 'inventory' && productInventoryReady && productStep === 'review');
               const isDisabled = !stepCard.ready && !isActive;
 
@@ -1799,7 +1825,7 @@ export function ProductsPage() {
                 </p>
               </div>
             </div>
-          ) : productStep === 'inventory' || productStep === 'review' ? (
+          ) : (inventoryStepEnabled && productStep === 'inventory') || productStep === 'review' ? (
             <div className="rounded-2xl border border-[var(--console-border)] bg-[var(--surface-card-soft)] p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="space-y-2">
@@ -1818,7 +1844,7 @@ export function ProductsPage() {
             </div>
           ) : null}
 
-          {productStep === 'inventory' ? (
+          {inventoryStepEnabled && productStep === 'inventory' ? (
             <div className="space-y-3 rounded-2xl border border-[var(--console-border)] bg-[var(--surface-card-soft)] p-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="space-y-1">
@@ -1841,16 +1867,7 @@ export function ProductsPage() {
                 ) : null}
               </div>
 
-              {!inventoryToolEnabled ? (
-                <div className="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-xs font-semibold text-amber-800">
-                  هذه الأداة تعمل بعد تفعيل نظام المستودع.
-                  {!warehouseRuntimeEnabled ? (
-                    <span className="mt-1 block text-[11px] font-bold">
-                      المطلوب الآن: مورد نشط واحد وصنف مخزني نشط واحد على الأقل.
-                    </span>
-                  ) : null}
-                </div>
-              ) : form.consumption_components.length === 0 ? (
+              {form.consumption_components.length === 0 ? (
                 <p className="rounded-xl border border-dashed border-[var(--console-border)] px-3 py-2 text-xs font-semibold text-[var(--text-muted)]">
                   لا يوجد ربط مخزني الآن.
                 </p>
@@ -1960,7 +1977,7 @@ export function ProductsPage() {
                   <p className="mt-1 text-sm font-black text-[var(--text-primary)]">{inventorySummaryLabel}</p>
                   <p className="mt-2 text-xs font-semibold text-[var(--text-secondary)]">
                     {!inventoryToolEnabled
-                      ? 'بانتظار تفعيل المستودع'
+                      ? 'غير متاح في هذه النسخة'
                       : validConsumptionComponents.length > 0
                         ? 'خصم مع كل بيع'
                         : 'لا يوجد خصم الآن'}
@@ -1999,13 +2016,18 @@ export function ProductsPage() {
                   رجوع
                 </button>
               ) : null}
-              {productStep === 'inventory' ? (
+              {inventoryStepEnabled && productStep === 'inventory' ? (
                 <button type="button" onClick={() => setProductStep('exposure')} className="btn-secondary" disabled={isSubmitting}>
                   رجوع
                 </button>
               ) : null}
               {productStep === 'review' ? (
-                <button type="button" onClick={() => setProductStep('inventory')} className="btn-secondary" disabled={isSubmitting}>
+                <button
+                  type="button"
+                  onClick={() => setProductStep(inventoryStepEnabled ? 'inventory' : 'exposure')}
+                  className="btn-secondary"
+                  disabled={isSubmitting}
+                >
                   رجوع
                 </button>
               ) : null}
@@ -2037,16 +2059,16 @@ export function ProductsPage() {
                       return;
                     }
                     setSubmitError('');
-                    setProductStep('inventory');
+                    setProductStep(inventoryStepEnabled ? 'inventory' : 'review');
                   }}
                   className="btn-primary"
                   disabled={isSubmitting}
                 >
-                  متابعة المكونات
+                  {inventoryStepEnabled ? 'متابعة المكونات' : 'متابعة المراجعة'}
                 </button>
               ) : null}
 
-              {productStep === 'inventory' ? (
+              {inventoryStepEnabled && productStep === 'inventory' ? (
                 <button
                   type="button"
                   onClick={() => {

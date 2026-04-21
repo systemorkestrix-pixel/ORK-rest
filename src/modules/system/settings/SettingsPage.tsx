@@ -327,8 +327,9 @@ export function SettingsPage() {
   const pageTitle = activeBranch === 'home' ? 'الإعدادات' : currentBranchMeta.title;
   const pageDescription =
     activeBranch === 'home'
-      ? 'هنا تبقى الأدوات المحلية التي يتحكم بها صاحب المطعم مباشرة.'
+      ? 'إعدادات التشغيل المحلية التي يحتاجها صاحب المطعم داخل هذه النسخة فقط.'
       : currentBranchMeta.description;
+  const displayPageDescription = pageDescription;
 
   return (
     <PageShell
@@ -336,7 +337,7 @@ export function SettingsPage() {
       header={
         <PageHeaderCard
           title={pageTitle}
-          description={pageDescription}
+          description={displayPageDescription}
           icon={<CurrentBranchIcon className="h-5 w-5" />}
           actions={
             <div className="flex flex-wrap gap-2">
