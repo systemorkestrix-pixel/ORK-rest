@@ -82,8 +82,13 @@ print(json.dumps(payload, ensure_ascii=True))
 """
         env = os.environ.copy()
         env["APP_ENV"] = "production"
+        env["EXPOSE_DIAGNOSTIC_ENDPOINTS"] = "false"
         env["JWT_SECRET"] = "phase7-prod-runtime-jwt-secret-0123456789abcdef0123456789"
         env["SECRET_KEY"] = "phase7-prod-runtime-secret-key-0123456789abcdef0123456789"
+        env["MASTER_ADMIN_USERNAME"] = "phase7-master-admin"
+        env["MASTER_ADMIN_PASSWORD"] = "Phase7MasterAdmin!2026"
+        env["ADMIN_USERNAME"] = "phase7_manager"
+        env["ADMIN_PASSWORD"] = "Phase7ManagerAdmin123"
         env["ALLOW_LEGACY_PASSWORD_LOGIN"] = "false"
         env.pop("CORS_ALLOW_ORIGINS", None)
         runtime = self._run_python_script(script=runtime_script, env=env)
@@ -109,8 +114,13 @@ print(json.dumps(payload, ensure_ascii=True))
         try:
             env_autogen = os.environ.copy()
             env_autogen["APP_ENV"] = "production"
+            env_autogen["EXPOSE_DIAGNOSTIC_ENDPOINTS"] = "false"
             env_autogen["JWT_SECRET"] = "phase7-prod-autogen-jwt-secret-0123456789abcdef0123456789"
             env_autogen["SECRET_KEY"] = "phase7-prod-autogen-secret-key-0123456789abcdef0123456789"
+            env_autogen["MASTER_ADMIN_USERNAME"] = "phase7-master-admin"
+            env_autogen["MASTER_ADMIN_PASSWORD"] = "Phase7MasterAdmin!2026"
+            env_autogen["ADMIN_USERNAME"] = "phase7_manager"
+            env_autogen["ADMIN_PASSWORD"] = "Phase7ManagerAdmin123"
             env_autogen["ALLOW_LEGACY_PASSWORD_LOGIN"] = "false"
             env_autogen["DATABASE_PATH"] = Path(temp_db.name).as_posix()
             blocked = subprocess.run(
@@ -298,8 +308,13 @@ asyncio.run(run())
 """
             env_first = os.environ.copy()
             env_first["APP_ENV"] = "production"
+            env_first["EXPOSE_DIAGNOSTIC_ENDPOINTS"] = "false"
             env_first["JWT_SECRET"] = "phase7-clean-first-jwt-secret-0123456789abcdef0123456789"
             env_first["SECRET_KEY"] = "phase7-clean-first-secret-key-0123456789abcdef0123456789"
+            env_first["MASTER_ADMIN_USERNAME"] = "phase7-master-admin"
+            env_first["MASTER_ADMIN_PASSWORD"] = "Phase7MasterAdmin!2026"
+            env_first["ADMIN_USERNAME"] = "phase7_manager"
+            env_first["ADMIN_PASSWORD"] = "Phase7ManagerAdmin123"
             env_first["ALLOW_LEGACY_PASSWORD_LOGIN"] = "false"
             env_first["DATABASE_PATH"] = source_db.as_posix()
             first_boot = self._run_python_script(script=first_boot_script, env=env_first)
@@ -429,8 +444,13 @@ asyncio.run(run())
 """
             env_second = os.environ.copy()
             env_second["APP_ENV"] = "production"
+            env_second["EXPOSE_DIAGNOSTIC_ENDPOINTS"] = "false"
             env_second["JWT_SECRET"] = "phase7-clean-second-jwt-secret-0123456789abcdef0123456789"
             env_second["SECRET_KEY"] = "phase7-clean-second-secret-key-0123456789abcdef0123456789"
+            env_second["MASTER_ADMIN_USERNAME"] = "phase7-master-admin"
+            env_second["MASTER_ADMIN_PASSWORD"] = "Phase7MasterAdmin!2026"
+            env_second["ADMIN_USERNAME"] = "phase7_manager"
+            env_second["ADMIN_PASSWORD"] = "Phase7ManagerAdmin123"
             env_second["ALLOW_LEGACY_PASSWORD_LOGIN"] = "false"
             env_second["DATABASE_PATH"] = restored_db.as_posix()
             second_boot = self._run_python_script(script=second_boot_script, env=env_second)
