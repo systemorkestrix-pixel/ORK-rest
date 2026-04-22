@@ -42,31 +42,31 @@ export type TrackingStep = {
 
 export const heroToneClasses: Record<TrackingTone, string> = {
   success:
-    'border-emerald-500/35 bg-[linear-gradient(135deg,rgba(16,185,129,0.18),rgba(6,78,59,0.62))] text-emerald-50',
+    'border-[color:var(--brand-green)] bg-[linear-gradient(135deg,var(--brand-green-soft),rgba(0,0,0,0.52))] text-emerald-50',
   warning:
-    'border-amber-500/35 bg-[linear-gradient(135deg,rgba(245,158,11,0.18),rgba(120,53,15,0.62))] text-amber-50',
+    'border-[color:var(--brand-gold)] bg-[linear-gradient(135deg,var(--brand-gold-soft),rgba(0,0,0,0.52))] text-amber-50',
   info:
-    'border-sky-500/35 bg-[linear-gradient(135deg,rgba(14,165,233,0.18),rgba(12,74,110,0.62))] text-sky-50',
+    'border-[color:var(--brand-blue)] bg-[linear-gradient(135deg,var(--brand-blue-soft),rgba(0,0,0,0.52))] text-sky-50',
   danger:
-    'border-rose-500/35 bg-[linear-gradient(135deg,rgba(244,63,94,0.18),rgba(127,29,29,0.62))] text-rose-50',
+    'border-[color:var(--brand-red)] bg-[linear-gradient(135deg,var(--brand-red-soft),rgba(0,0,0,0.52))] text-rose-50',
 };
 
 export const statusCardToneClasses: Record<TrackingTone, string> = {
   success:
-    'border-emerald-400/45 bg-[linear-gradient(135deg,rgba(16,185,129,0.18),rgba(6,95,70,0.46))] text-emerald-50 shadow-[0_20px_45px_rgba(5,150,105,0.16)]',
+    'border-[color:var(--brand-green)] bg-[linear-gradient(135deg,var(--brand-green-soft),rgba(0,0,0,0.44))] text-emerald-50 shadow-[0_20px_45px_rgba(34,197,94,0.16)]',
   warning:
-    'border-amber-400/45 bg-[linear-gradient(135deg,rgba(245,158,11,0.18),rgba(146,64,14,0.46))] text-amber-50 shadow-[0_20px_45px_rgba(245,158,11,0.16)]',
+    'border-[color:var(--brand-gold)] bg-[linear-gradient(135deg,var(--brand-gold-soft),rgba(0,0,0,0.44))] text-amber-50 shadow-[0_20px_45px_rgba(227,160,86,0.16)]',
   info:
-    'border-sky-400/45 bg-[linear-gradient(135deg,rgba(14,165,233,0.18),rgba(3,105,161,0.46))] text-sky-50 shadow-[0_20px_45px_rgba(14,165,233,0.16)]',
+    'border-[color:var(--brand-blue)] bg-[linear-gradient(135deg,var(--brand-blue-soft),rgba(0,0,0,0.44))] text-sky-50 shadow-[0_20px_45px_rgba(24,160,251,0.16)]',
   danger:
-    'border-rose-400/45 bg-[linear-gradient(135deg,rgba(244,63,94,0.18),rgba(159,18,57,0.46))] text-rose-50 shadow-[0_20px_45px_rgba(244,63,94,0.16)]',
+    'border-[color:var(--brand-red)] bg-[linear-gradient(135deg,var(--brand-red-soft),rgba(0,0,0,0.44))] text-rose-50 shadow-[0_20px_45px_rgba(255,61,31,0.16)]',
 };
 
 export const descriptionFrameToneClasses: Record<TrackingTone, string> = {
-  success: 'border-emerald-500/25 bg-[#17110d] text-stone-200',
-  warning: 'border-amber-500/25 bg-[#17110d] text-stone-200',
-  info: 'border-sky-500/25 bg-[#17110d] text-stone-200',
-  danger: 'border-rose-500/25 bg-[#17110d] text-stone-200',
+  success: 'border-[color:rgba(34,197,94,0.28)] bg-[#17110d] text-stone-200',
+  warning: 'border-[color:rgba(227,160,86,0.28)] bg-[#17110d] text-stone-200',
+  info: 'border-[color:rgba(24,160,251,0.28)] bg-[#17110d] text-stone-200',
+  danger: 'border-[color:rgba(255,61,31,0.28)] bg-[#17110d] text-stone-200',
 };
 
 export function resolveTrackingPresentation(
