@@ -243,7 +243,8 @@ def _validate_activation_stage_transition(current_stage_id: str, requested_stage
 
 
 def build_tenant_manager_login_path(code: str) -> str:
-    return "/manager/login"
+    normalized = _slugify(code)
+    return f"/t/{normalized}/manager/login" if normalized else "/manager/login"
 
 
 def build_tenant_public_order_path(code: str) -> str:
