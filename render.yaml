@@ -26,6 +26,14 @@ services:
         sync: false
       - key: SECRET_KEY
         sync: false
+      - key: MASTER_ADMIN_USERNAME
+        sync: false
+      - key: MASTER_ADMIN_PASSWORD
+        sync: false
+      - key: ADMIN_USERNAME
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
     disks:
       - name: restaurant-db
         mountPath: /var/data
