@@ -128,7 +128,7 @@ def load_settings() -> AppSettings:
             "http://localhost:3000",
             "http://127.0.0.1:3000",
         )
-    expose_diagnostic_endpoints = False if is_production else _parse_bool_env("EXPOSE_DIAGNOSTIC_ENDPOINTS", True)
+    expose_diagnostic_endpoints = _parse_bool_env("EXPOSE_DIAGNOSTIC_ENDPOINTS", not is_production)
     settings = AppSettings(
         app_env=app_env,
         is_production=is_production,
