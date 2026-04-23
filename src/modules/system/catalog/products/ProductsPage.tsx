@@ -233,14 +233,6 @@ export function ProductsPage() {
   const role = useAuthStore((state) => state.role);
   const queryClient = useQueryClient();
 
-  const publicOrderUrl = useMemo(() => {
-    if (typeof window === 'undefined') {
-      return '/order';
-    }
-    const tenantCode = window.sessionStorage.getItem('active_tenant_code')?.trim();
-    return tenantCode ? `/t/${encodeURIComponent(tenantCode)}/order` : '/order';
-  }, []);
-
   const [search, setSearch] = useState('');
   const [searchDraft, setSearchDraft] = useState('');
   const [sortBy, setSortBy] = useState<ProductSort>('id');
@@ -296,6 +288,13 @@ export function ProductsPage() {
     enabled: role === 'manager',
     staleTime: 30_000,
   });
+
+  const publicOrderUrl = useMemo(() => {
+    const tenantCode =
+      tenantContextQuery.data?.tenant_code?.trim() ||
+      (typeof window === 'undefined' ? '' : window.sessionStorage.getItem('active_tenant_code')?.trim() || '');
+    return tenantCode ? `/t/${encodeURIComponent(tenantCode)}/order` : null;
+  }, [tenantContextQuery.data?.tenant_code]);
 
   const warehouseChannelEnabled =
     tenantContextQuery.isSuccess && (tenantContextQuery.data?.channel_modes?.warehouse ?? 'disabled') === 'core';
@@ -788,8 +787,14 @@ export function ProductsPage() {
 
               <button
                 type="button"
-                onClick={() => window.open(publicOrderUrl, '_blank', 'noopener,noreferrer')}
+                onClick={() => {
+                  if (!publicOrderUrl) {
+                    return;
+                  }
+                  window.open(publicOrderUrl, '_blank', 'noopener,noreferrer');
+                }}
                 className="btn-secondary inline-flex min-h-[42px] w-full items-center justify-center gap-2"
+                disabled={!publicOrderUrl}
               >
                 <ExternalLink className="h-4 w-4" />
                 <span>فتح الواجهة العامة</span>
