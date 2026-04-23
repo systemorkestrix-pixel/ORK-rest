@@ -1,4 +1,5 @@
 import type { OrderType, PublicJourneyProduct, PublicSecondaryOption } from '@/shared/api/types';
+import { resolveBackendOrigin } from '@/shared/utils/backendOrigin';
 
 export interface CartSecondarySelection {
   option: PublicSecondaryOption;
@@ -19,8 +20,7 @@ export const orderTypeOptions: Array<{ value: OrderType; label: string }> = [
 export const fallbackDeliveryBlockedReason =
   'خدمة التوصيل غير متاحة حاليًا. يرجى اختيار الاستلام أو الطلب من الطاولة.';
 
-export const backendOrigin =
-  (import.meta.env.VITE_BACKEND_ORIGIN as string | undefined)?.replace(/\/$/, '') ?? 'http://127.0.0.1:8124';
+export const backendOrigin = resolveBackendOrigin();
 
 export const timeFormatter = new Intl.DateTimeFormat('ar-DZ-u-nu-latn', {
   hour: '2-digit',
