@@ -29,6 +29,9 @@ class AppSettings:
     login_lockout_minutes: int
     migration_version_table: str
     schema_expected_revision: str | None
+    run_startup_maintenance: bool
+    run_startup_tenant_sync: bool
+    run_startup_integrity_checks: bool
     master_admin_username: str
     master_admin_password: str
     master_admin_display_name: str
@@ -129,6 +132,9 @@ def load_settings() -> AppSettings:
             "http://127.0.0.1:3000",
         )
     expose_diagnostic_endpoints = _parse_bool_env("EXPOSE_DIAGNOSTIC_ENDPOINTS", not is_production)
+    run_startup_maintenance = _parse_bool_env("RUN_STARTUP_MAINTENANCE", not is_production)
+    run_startup_tenant_sync = _parse_bool_env("RUN_STARTUP_TENANT_SYNC", not is_production)
+    run_startup_integrity_checks = _parse_bool_env("RUN_STARTUP_INTEGRITY_CHECKS", not is_production)
     settings = AppSettings(
         app_env=app_env,
         is_production=is_production,
@@ -152,6 +158,9 @@ def load_settings() -> AppSettings:
         login_lockout_minutes=_parse_int_env("LOGIN_LOCKOUT_MINUTES", 15),
         migration_version_table=(os.getenv("MIGRATION_VERSION_TABLE") or "alembic_version").strip(),
         schema_expected_revision=(os.getenv("SCHEMA_EXPECTED_REVISION") or "").strip() or None,
+        run_startup_maintenance=run_startup_maintenance,
+        run_startup_tenant_sync=run_startup_tenant_sync,
+        run_startup_integrity_checks=run_startup_integrity_checks,
         master_admin_username=(os.getenv("MASTER_ADMIN_USERNAME") or "owner@master.local").strip(),
         master_admin_password=(os.getenv("MASTER_ADMIN_PASSWORD") or ("Master@2026!" if not is_production else "")).strip(),
         sales_paypal_url=(os.getenv("SALES_PAYPAL_URL") or "").strip() or None,
