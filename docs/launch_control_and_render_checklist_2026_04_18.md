@@ -7,12 +7,12 @@
   - upgrades `pip`
   - installs `backend/requirements.txt`
 - `start.sh`
-  - ensures the SQLite parent directory exists when `DATABASE_PATH` or sqlite `DATABASE_URL` is used
+  - ensures the SQLite parent directory exists when a sqlite `DATABASE_URL` is used
   - runs `alembic upgrade head` from `backend/`
   - starts `uvicorn main:app --host 0.0.0.0 --port "${PORT:-8122}" --app-dir backend`
 - `render.yaml`
   - API service uses `healthCheckPath: /health`
-  - SQLite file path is mounted on `/var/data/restaurant.db`
+  - API service expects external `DATABASE_URL`
   - static site points to `VITE_API_BASE_URL=https://restaurants-api.onrender.com/api`
 
 ### Launch judgment
@@ -23,12 +23,16 @@
 ## 2. Final Render Checklist
 
 ### API service
-- Confirm persistent disk is mounted at `/var/data`
-- Confirm `DATABASE_PATH=/var/data/restaurant.db`
+- Confirm `DATABASE_URL` points to the target Supabase/Postgres database
 - Confirm `JWT_SECRET` is set
 - Confirm `SECRET_KEY` is set
+- Confirm `MASTER_ADMIN_USERNAME` is set
+- Confirm `MASTER_ADMIN_PASSWORD` is set
+- Confirm `ADMIN_USERNAME` is set
+- Confirm `ADMIN_PASSWORD` is set
 - Confirm `APP_ENV=production`
 - Confirm `DEBUG=false`
+- Confirm `EXPOSE_DIAGNOSTIC_ENDPOINTS=true`
 - Confirm `CORS_ALLOW_ORIGINS=https://restaurants-console.onrender.com`
 - Keep `ALLOW_LEGACY_PASSWORD_LOGIN=false`
 
@@ -42,7 +46,7 @@
 - Open `/manager/login`
 - Open `/master/login`
 - Confirm Alembic reaches head without retry loops
-- Confirm the first manager login works against the mounted database
+- Confirm the first manager login works against the external database
 
 ### Field validation after deploy
 - Create one manual order
@@ -50,6 +54,21 @@
 - Confirm public scoped path works only through `/t/<tenant_code>/order`
 - Confirm `/console/plans` redirects to `/console`
 - Confirm no base-release screen exposes unfinished addon purchase UI
+
+### Automated live smoke
+- Run `python scripts/render_live_smoke.py`
+- Required pass conditions:
+  - API root -> `200`
+  - API health -> `200`
+  - tenant-entry -> `200`
+  - unscoped public products -> `404`
+  - console root -> `200`
+  - manager login -> `200`
+
+### Current live blocker as of `2026-04-22`
+- `restaurants-api.onrender.com` returns `404`
+- `restaurants-console.onrender.com` returns `404`
+- This is now treated as a deployment-state blocker, not a local code-contract blocker
 
 ## 3. Addon Control Study
 
@@ -146,6 +165,7 @@ Priority files for split planning:
 - scoped public routing
 
 ### Not ready for customer-facing release
+- live Render deployment is still failing the smoke contract
 - paid addon purchase automation
 - automatic addon expiry
 - kitchen printer automation
