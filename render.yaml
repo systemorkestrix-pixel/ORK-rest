@@ -16,8 +16,8 @@ services:
         value: "false"
       - key: EXPOSE_DIAGNOSTIC_ENDPOINTS
         value: "true"
-      - key: DATABASE_PATH
-        value: /var/data/restaurant.db
+      - key: DATABASE_URL
+        sync: false
       - key: CORS_ALLOW_ORIGINS
         value: https://restaurants-console.onrender.com
       - key: ALLOW_LEGACY_PASSWORD_LOGIN
@@ -34,11 +34,6 @@ services:
         sync: false
       - key: ADMIN_PASSWORD
         sync: false
-    disks:
-      - name: restaurant-db
-        mountPath: /var/data
-        sizeGB: 1
-
   - type: static_site
     name: restaurants-console
     rootDir: .

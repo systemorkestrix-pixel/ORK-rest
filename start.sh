@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Ensure SQLite parent directory exists on Render persistent disk when using DATABASE_PATH.
+# Ensure local SQLite parent directory exists when runtime uses a SQLite URL.
 if [[ -n "${DATABASE_PATH:-}" ]]; then
   mkdir -p "$(dirname "$DATABASE_PATH")"
 elif [[ "${DATABASE_URL:-}" == sqlite:///* ]]; then
