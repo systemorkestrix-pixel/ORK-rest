@@ -10,7 +10,7 @@ from fastapi.staticfiles import StaticFiles
 from app.config import load_settings
 from app.database import Base, SessionLocal, assert_production_migration_state, engine, run_startup_integrity_checks
 from app.routers import auth, bot, delivery, kitchen, manager, master, public, warehouse
-from app.seed import bootstrap_production_data, seed_development_data
+from app.seed import bootstrap_production_data, bootstrap_production_maintenance, seed_development_data
 from app.text_sanitizer import sanitize_payload
 from core.events.bootstrap import get_event_bus
 from application.master_engine.domain.provisioning import sync_all_tenant_tables
@@ -33,14 +33,18 @@ async def lifespan(app: FastAPI):
     try:
         if SETTINGS.is_production:
             bootstrap_production_data(db)
+            if SETTINGS.run_startup_maintenance:
+                bootstrap_production_maintenance(db)
         else:
             seed_development_data(db)
-        # Existing tenant databases are provisioned as separate snapshots,
-        # so additive tables must be synced forward for already-created tenants.
-        sync_all_tenant_tables(db, table_names=["restaurant_employees"])
+        if SETTINGS.run_startup_tenant_sync:
+            # Existing tenant databases are provisioned as separate snapshots,
+            # so additive tables must be synced forward for already-created tenants.
+            sync_all_tenant_tables(db, table_names=["restaurant_employees"])
     finally:
         db.close()
-    run_startup_integrity_checks(engine)
+    if SETTINGS.run_startup_integrity_checks:
+        run_startup_integrity_checks(engine)
     app.state.event_bus = get_event_bus()
     yield
 
