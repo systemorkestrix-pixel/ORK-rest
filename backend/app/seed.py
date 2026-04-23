@@ -1033,8 +1033,13 @@ def seed_development_data(db: Session) -> None:
     _seed_delivery_fee_setting(db)
 
 
-def bootstrap_production_data(db: Session) -> None:
+def bootstrap_production_maintenance(db: Session) -> None:
     _run_common_bootstrap(db, allow_schema_mutation=False)
+    _seed_initial_manager_for_production(db)
+
+
+def bootstrap_production_data(db: Session) -> None:
+    _assert_schema_matches_models(db)
     _seed_initial_manager_for_production(db)
 
 
