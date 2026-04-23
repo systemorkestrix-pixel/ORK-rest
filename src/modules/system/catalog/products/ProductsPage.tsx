@@ -15,10 +15,11 @@ import type {
 import { Modal } from '@/shared/ui/Modal';
 import { PageShell } from '@/shared/ui/PageShell';
 import { TABLE_ACTION_BUTTON_BASE, TABLE_STATUS_CHIP_BASE } from '@/shared/ui/tableAppearance';
+import { resolveBackendOrigin } from '@/shared/utils/backendOrigin';
 import { adaptiveRefetchInterval } from '@/shared/utils/polling';
 
 const ARCHIVED_PAGE_SIZE = 100;
-const backendOrigin = (import.meta.env.VITE_BACKEND_ORIGIN as string | undefined)?.replace(/\/$/, '') ?? 'http://127.0.0.1:8124';
+const backendOrigin = resolveBackendOrigin();
 const PROTECTED_CATEGORY_NAMES = new Set(['عام']);
 const MENU_TABLE_ACTION_WITH_ICON = `${TABLE_ACTION_BUTTON_BASE} gap-1.5`;
 
