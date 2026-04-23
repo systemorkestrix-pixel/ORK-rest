@@ -15,8 +15,6 @@ import { adaptiveRefetchInterval } from '@/shared/utils/polling';
 import type { PublicLayoutOutletContext } from '@/app/layout/PublicLayout';
 import { PublicCartSummaryBar } from './components/PublicCartSummaryBar';
 import { PublicCheckoutModal } from './components/PublicCheckoutModal';
-import { PublicLandingHero } from './components/PublicLandingHero';
-import { PublicProductComposer } from './components/PublicProductComposer';
 import { PublicProductsCatalog } from './components/PublicProductsCatalog';
 import {
   type CartRow,
@@ -32,7 +30,7 @@ function getDeepestSelectedNode(nodes: Array<DeliveryAddressNode | undefined>): 
 }
 
 export function PublicOrderPage() {
-  const { storefrontSettings } = useOutletContext<PublicLayoutOutletContext>();
+  useOutletContext<PublicLayoutOutletContext>();
   const location = useLocation();
   const queryClient = useQueryClient();
   const tenantCode = location.pathname.match(/^\/t\/([^/]+)(?:\/|$)/i)?.[1] ?? 'public';
@@ -49,7 +47,6 @@ export function PublicOrderPage() {
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [lastCreatedOrder, setLastCreatedOrder] = useState<Order | null>(null);
   const [showCreatedOrderCard, setShowCreatedOrderCard] = useState(false);
-  const [composerProduct, setComposerProduct] = useState<PublicJourneyProduct | null>(null);
   const [selectedDeliveryRootId, setSelectedDeliveryRootId] = useState<number | undefined>();
   const [selectedDeliveryAdminAreaLevel2Id, setSelectedDeliveryAdminAreaLevel2Id] = useState<number | undefined>();
   const [selectedDeliveryLocalityId, setSelectedDeliveryLocalityId] = useState<number | undefined>();
@@ -317,32 +314,23 @@ export function PublicOrderPage() {
     ? getErrorMessage(tableSessionQuery.error, 'تعذر تحميل حالة الطاولة')
     : '';
 
-  const openComposer = (product: PublicJourneyProduct) => {
-    setComposerProduct(product);
-  };
-
-  const closeComposer = () => {
-    setComposerProduct(null);
-  };
-
-  const saveComposerRow = (row: CartRow | null) => {
-    if (!composerProduct) {
-      return;
-    }
-
+  const updateCartQuantity = (product: PublicJourneyProduct, delta: number) => {
     setCart((prev) => {
+      const currentQuantity = prev[product.id]?.quantity ?? 0;
+      const nextQuantity = Math.max(0, currentQuantity + delta);
       const next = { ...prev };
 
-      if (!row || row.quantity <= 0) {
-        delete next[composerProduct.id];
+      if (nextQuantity <= 0) {
+        delete next[product.id];
         return next;
       }
 
-      next[composerProduct.id] = row;
+      next[product.id] = {
+        product,
+        quantity: nextQuantity,
+      };
       return next;
     });
-
-    closeComposer();
   };
 
   const updateSecondarySelectionQuantity = (option: PublicSecondaryOption, delta: number) => {
@@ -449,17 +437,6 @@ export function PublicOrderPage() {
 
   return (
     <div dir="rtl" className="mx-auto max-w-7xl space-y-5 px-3 py-4 text-right md:px-5 md:py-6">
-      <PublicLandingHero
-        brandMark={storefrontSettings.brand_mark}
-        brandName={storefrontSettings.brand_name}
-        brandIcon={storefrontSettings.brand_icon}
-        categoriesCount={bootstrapQuery.data?.catalog.categories.length ?? 0}
-        totalProducts={totalProducts}
-        deliveryEnabled={deliveryEnabled}
-        hasTableContext={Boolean(tableId)}
-        hasActiveSession={hasActiveTableSession}
-      />
-
       {bootstrapErrorText ? (
         <div className="rounded-2xl border border-amber-500/35 bg-amber-500/10 px-4 py-3 text-sm font-semibold text-amber-200">
           {bootstrapErrorText}
@@ -505,15 +482,8 @@ export function PublicOrderPage() {
         totalProducts={totalProducts}
         categoryEntries={categoryEntries}
         cart={cart}
-        onOpenComposer={openComposer}
-      />
-
-      <PublicProductComposer
-        open={Boolean(composerProduct)}
-        product={composerProduct}
-        existingRow={composerProduct ? cart[composerProduct.id] : undefined}
-        onClose={closeComposer}
-        onSave={saveComposerRow}
+        onIncreaseQuantity={(product) => updateCartQuantity(product, 1)}
+        onDecreaseQuantity={(product) => updateCartQuantity(product, -1)}
       />
 
       <PublicCartSummaryBar

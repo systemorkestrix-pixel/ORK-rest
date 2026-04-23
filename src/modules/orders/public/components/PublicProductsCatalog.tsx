@@ -1,4 +1,4 @@
-import { Pencil, Plus } from 'lucide-react';
+import { Minus, Plus } from 'lucide-react';
 
 import type { PublicJourneyProduct } from '@/shared/api/types';
 import type { CartRow } from '../publicOrder.helpers';
@@ -10,11 +10,8 @@ interface PublicProductsCatalogProps {
   totalProducts: number;
   categoryEntries: Array<[string, PublicJourneyProduct[]]>;
   cart: Record<number, CartRow>;
-  onOpenComposer: (product: PublicJourneyProduct) => void;
-}
-
-function cartQuantityLabel(quantity: number): string {
-  return quantity > 0 ? `${quantity} في الطلب` : 'جاهز للإضافة';
+  onIncreaseQuantity: (product: PublicJourneyProduct) => void;
+  onDecreaseQuantity: (product: PublicJourneyProduct) => void;
 }
 
 export function PublicProductsCatalog({
@@ -23,16 +20,15 @@ export function PublicProductsCatalog({
   totalProducts,
   categoryEntries,
   cart,
-  onOpenComposer,
+  onIncreaseQuantity,
+  onDecreaseQuantity,
 }: PublicProductsCatalogProps) {
   return (
     <section className="rounded-[34px] border border-[#eadbc7] bg-[#fffaf3] p-4 shadow-[0_24px_60px_rgba(170,126,70,0.12)] md:p-6">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h3 className="text-xl font-black text-[#2d2117]">قائمة الطلب</h3>
-          <p className="mt-1 text-sm font-semibold text-[#7c6651]">
-            اختر منتجك مباشرة. التفاصيل الإضافية تظهر فقط عند فتح البطاقة.
-          </p>
+          <p className="mt-1 text-sm font-semibold text-[#7c6651]">أضف الكمية مباشرة من البطاقات ثم افتح الطلب للمراجعة النهائية.</p>
         </div>
 
         <span className="rounded-full border border-[#eadbc7] bg-white px-4 py-2 text-xs font-black text-[#6d5845]">
@@ -70,15 +66,12 @@ export function PublicProductsCatalog({
 
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
               {products.map((product) => {
-                const cartRow = cart[product.id];
-                const quantity = cartRow?.quantity ?? 0;
+                const quantity = cart[product.id]?.quantity ?? 0;
                 const imageUrl = resolveImageUrl(product.image_path);
 
                 return (
-                  <button
+                  <article
                     key={product.id}
-                    type="button"
-                    onClick={() => onOpenComposer(product)}
                     className="group flex flex-col overflow-hidden rounded-[28px] border border-[#eadbc7] bg-white text-right shadow-[0_12px_28px_rgba(170,126,70,0.10)] transition hover:-translate-y-0.5 hover:border-[#d29d67] hover:shadow-[0_18px_36px_rgba(170,126,70,0.16)]"
                   >
                     <div className="relative aspect-square overflow-hidden bg-[#f6ead7]">
@@ -98,12 +91,6 @@ export function PublicProductsCatalog({
                       <span className="absolute left-3 top-3 rounded-full border border-white/60 bg-white/90 px-3 py-1 text-[11px] font-black text-[#9d5d24] shadow-sm">
                         {product.price.toFixed(2)} د.ج
                       </span>
-
-                      {quantity > 0 ? (
-                        <span className="absolute bottom-3 right-3 rounded-full bg-emerald-600 px-3 py-1 text-[11px] font-black text-white shadow-sm">
-                          {quantity} ×
-                        </span>
-                      ) : null}
                     </div>
 
                     <div className="flex flex-1 flex-col justify-between p-4">
@@ -111,15 +98,40 @@ export function PublicProductsCatalog({
                         <h5 className="line-clamp-2 min-h-[48px] text-sm font-black leading-6 text-[#2d2117] md:text-base">
                           {product.name}
                         </h5>
-                        <p className="text-[11px] font-semibold text-[#8b735d]">{cartQuantityLabel(quantity)}</p>
+                        {product.description ? (
+                          <p className="line-clamp-2 text-[11px] font-semibold leading-5 text-[#8b735d]">{product.description}</p>
+                        ) : (
+                          <p className="text-[11px] font-semibold text-[#8b735d]">جاهز للإضافة المباشرة</p>
+                        )}
                       </div>
 
-                      <div className="mt-4 inline-flex min-h-[42px] items-center justify-center gap-2 rounded-2xl bg-[#e38b38] px-4 text-sm font-black text-[#1a120d] transition group-hover:bg-[#ef9a4b]">
-                        {quantity > 0 ? <Pencil className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-                        <span>{quantity > 0 ? 'تعديل' : 'إضافة'}</span>
+                      <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-[#eadbc7] bg-[#fff8ee] p-2">
+                        <button
+                          type="button"
+                          onClick={() => onDecreaseQuantity(product)}
+                          disabled={quantity === 0}
+                          className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-[#eadbc7] bg-white text-[#5c4735] transition hover:bg-[#fff2df] disabled:cursor-not-allowed disabled:opacity-45"
+                          aria-label={`تقليل كمية ${product.name}`}
+                        >
+                          <Minus className="h-4 w-4" />
+                        </button>
+
+                        <div className="min-w-[64px] text-center">
+                          <p className="text-[11px] font-bold text-[#8b735d]">في الطلب</p>
+                          <p className="text-xl font-black text-[#2d2117]">{quantity}</p>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => onIncreaseQuantity(product)}
+                          className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[#e38b38] text-[#1a120d] transition hover:bg-[#ef9a4b]"
+                          aria-label={`زيادة كمية ${product.name}`}
+                        >
+                          <Plus className="h-4 w-4" />
+                        </button>
                       </div>
                     </div>
-                  </button>
+                  </article>
                 );
               })}
             </div>
