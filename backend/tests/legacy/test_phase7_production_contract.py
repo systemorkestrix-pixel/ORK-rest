@@ -73,6 +73,9 @@ payload = {
     "settings_debug": bool(settings.debug),
     "secret_key_len": len(settings.secret_key),
     "allow_legacy_password_login": bool(settings.allow_legacy_password_login),
+    "run_startup_maintenance": bool(settings.run_startup_maintenance),
+    "run_startup_tenant_sync": bool(settings.run_startup_tenant_sync),
+    "run_startup_integrity_checks": bool(settings.run_startup_integrity_checks),
     "has_health": any(getattr(route, "path", "") == "/health" for route in main.app.routes),
     "docs_url": main.app.docs_url,
     "openapi_url": main.app.openapi_url,
@@ -101,6 +104,9 @@ print(json.dumps(payload, ensure_ascii=True))
         self.assertFalse(bool(payload["debug"]))
         self.assertFalse(bool(payload["settings_debug"]))
         self.assertFalse(bool(payload["allow_legacy_password_login"]))
+        self.assertFalse(bool(payload["run_startup_maintenance"]))
+        self.assertFalse(bool(payload["run_startup_tenant_sync"]))
+        self.assertFalse(bool(payload["run_startup_integrity_checks"]))
         self.assertGreaterEqual(int(payload["secret_key_len"]), 32)
         self.assertFalse(bool(payload["has_health"]))
         self.assertIsNone(payload["docs_url"])
