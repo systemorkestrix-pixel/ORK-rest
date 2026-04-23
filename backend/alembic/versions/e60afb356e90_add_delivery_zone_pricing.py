@@ -74,7 +74,7 @@ def _create_full_table() -> None:
         sa.Column("name", sa.String(length=160), nullable=False),
         sa.Column("display_name", sa.String(length=255), nullable=False),
         sa.Column("delivery_fee", sa.Float(), nullable=False, server_default="0"),
-        sa.Column("active", sa.Boolean(), nullable=False, server_default=sa.text("1")),
+        sa.Column("active", sa.Boolean(), nullable=False, server_default=sa.text("true")),
         sa.Column("sort_order", sa.Integer(), nullable=False, server_default="0"),
         sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.text("CURRENT_TIMESTAMP")),
         sa.Column("updated_at", sa.DateTime(), nullable=False, server_default=sa.text("CURRENT_TIMESTAMP")),

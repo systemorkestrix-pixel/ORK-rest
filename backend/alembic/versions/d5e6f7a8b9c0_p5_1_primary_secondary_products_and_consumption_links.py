@@ -42,7 +42,7 @@ def upgrade() -> None:
             sa.Column("primary_product_id", sa.Integer(), nullable=False),
             sa.Column("secondary_product_id", sa.Integer(), nullable=False),
             sa.Column("sort_order", sa.Integer(), nullable=False, server_default="0"),
-            sa.Column("is_default", sa.Boolean(), nullable=False, server_default=sa.text("0")),
+            sa.Column("is_default", sa.Boolean(), nullable=False, server_default=sa.text("false")),
             sa.Column("max_quantity", sa.Integer(), nullable=False, server_default="1"),
             sa.Column("created_at", sa.DateTime(), nullable=False),
             sa.CheckConstraint("primary_product_id <> secondary_product_id", name="ck_product_secondary_link_not_self"),

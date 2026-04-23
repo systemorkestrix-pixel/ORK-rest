@@ -75,7 +75,7 @@ def upgrade() -> None:
         op.create_index("ix_delivery_drivers_provider_id", "delivery_drivers", ["provider_id"], unique=False)
 
     provider_id = connection.execute(
-        sa.text("SELECT id FROM delivery_providers WHERE is_internal_default = 1 LIMIT 1")
+        sa.text("SELECT id FROM delivery_providers WHERE is_internal_default = TRUE LIMIT 1")
     ).scalar_one_or_none()
     if provider_id is None:
         provider_id = connection.execute(
@@ -83,6 +83,7 @@ def upgrade() -> None:
                 """
                 INSERT INTO delivery_providers (name, provider_type, active, is_internal_default, created_at)
                 VALUES (:name, :provider_type, :active, :is_internal_default, :created_at)
+                RETURNING id
                 """
             ),
             {
@@ -92,7 +93,7 @@ def upgrade() -> None:
                 "is_internal_default": True,
                 "created_at": datetime.now(UTC),
             },
-        ).lastrowid
+        ).scalar_one()
 
     connection.execute(
         sa.text(

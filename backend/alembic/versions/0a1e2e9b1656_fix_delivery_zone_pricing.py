@@ -168,7 +168,7 @@ def upgrade() -> None:
             sa.text(
                 f"""
                 UPDATE {TABLE_NAME}
-                SET active = COALESCE(active, is_active, 1)
+                SET active = COALESCE(active, is_active, TRUE)
                 WHERE active IS NULL
                 """
             )
@@ -178,7 +178,7 @@ def upgrade() -> None:
             sa.text(
                 f"""
                 UPDATE {TABLE_NAME}
-                SET active = 1
+                SET active = TRUE
                 WHERE active IS NULL
                 """
             )
