@@ -110,7 +110,7 @@ class Phase2SchemaIntegrityTests(unittest.TestCase):
         tmp.close()
         db_path = Path(tmp.name)
         env = os.environ.copy()
-        env["DATABASE_PATH"] = db_path.as_posix()
+        env["DATABASE_URL"] = f"sqlite:///{db_path.as_posix()}"
         env.setdefault("JWT_SECRET", "phase2-test-secret-0123456789abcdef0123456789")
 
         proc = subprocess.run(

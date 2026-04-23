@@ -39,7 +39,7 @@ ARCHIVE_TABLES: tuple[str, ...] = tuple(f"legacy_archive_{name}" for name in ALL
 class Phase3InventoryPhysicalDropTests(unittest.TestCase):
     def _run_alembic(self, db_path: Path, revision: str) -> None:
         env = os.environ.copy()
-        env["DATABASE_PATH"] = db_path.as_posix()
+        env["DATABASE_URL"] = f"sqlite:///{db_path.as_posix()}"
         env.setdefault("JWT_SECRET", "phase3-drop-secret-0123456789abcdef0123456789")
         proc = subprocess.run(
             [sys.executable, "-m", "alembic", "upgrade", revision],

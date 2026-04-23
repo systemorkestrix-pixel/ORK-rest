@@ -45,7 +45,7 @@ class Phase7ButtonDeleteIntegrityTests(unittest.TestCase):
         tmp.close()
         db_path = Path(tmp.name)
         env = os.environ.copy()
-        env["DATABASE_PATH"] = db_path.as_posix()
+        env["DATABASE_URL"] = f"sqlite:///{db_path.as_posix()}"
         proc = subprocess.run(
             [sys.executable, "-m", "alembic", "upgrade", "head"],
             cwd=BACKEND_DIR,

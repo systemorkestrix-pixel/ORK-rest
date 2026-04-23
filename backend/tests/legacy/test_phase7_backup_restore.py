@@ -89,7 +89,7 @@ def refund_order(
 class Phase7BackupRestoreTests(unittest.TestCase):
     def _run_alembic_upgrade(self, db_path: Path) -> subprocess.CompletedProcess[str]:
         env = os.environ.copy()
-        env["DATABASE_PATH"] = db_path.as_posix()
+        env["DATABASE_URL"] = f"sqlite:///{db_path.as_posix()}"
         return subprocess.run(
             [sys.executable, "-m", "alembic", "upgrade", "head"],
             cwd=BACKEND_DIR,
@@ -552,7 +552,7 @@ asyncio.run(run())
         env["JWT_SECRET"] = "phase7-cold-start-production-secret-0123456789abcdef0123456789"
         env["SECRET_KEY"] = "phase7-cold-start-prod-secret-key-0123456789abcdef0123456789"
         env["ALLOW_LEGACY_PASSWORD_LOGIN"] = "false"
-        env["DATABASE_PATH"] = db_path.as_posix()
+        env["DATABASE_URL"] = f"sqlite:///{db_path.as_posix()}"
         return subprocess.run(
             [sys.executable, "-c", script],
             cwd=BACKEND_DIR,

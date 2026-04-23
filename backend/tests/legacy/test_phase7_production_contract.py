@@ -28,7 +28,7 @@ class Phase7ProductionContractTests(unittest.TestCase):
 
     def _run_alembic_upgrade(self, db_path: Path) -> subprocess.CompletedProcess[str]:
         env = os.environ.copy()
-        env["DATABASE_PATH"] = db_path.as_posix()
+        env["DATABASE_URL"] = f"sqlite:///{db_path.as_posix()}"
         return subprocess.run(
             [sys.executable, "-m", "alembic", "upgrade", "head"],
             cwd=BACKEND_DIR,
@@ -122,7 +122,7 @@ print(json.dumps(payload, ensure_ascii=True))
             env_autogen["ADMIN_USERNAME"] = "phase7_manager"
             env_autogen["ADMIN_PASSWORD"] = "Phase7ManagerAdmin123"
             env_autogen["ALLOW_LEGACY_PASSWORD_LOGIN"] = "false"
-            env_autogen["DATABASE_PATH"] = Path(temp_db.name).as_posix()
+            env_autogen["DATABASE_URL"] = f"sqlite:///{Path(temp_db.name).as_posix()}"
             blocked = subprocess.run(
                 [sys.executable, "-m", "alembic", "revision", "--autogenerate", "-m", "prod_autogen_block_probe"],
                 cwd=BACKEND_DIR,
@@ -316,7 +316,7 @@ asyncio.run(run())
             env_first["ADMIN_USERNAME"] = "phase7_manager"
             env_first["ADMIN_PASSWORD"] = "Phase7ManagerAdmin123"
             env_first["ALLOW_LEGACY_PASSWORD_LOGIN"] = "false"
-            env_first["DATABASE_PATH"] = source_db.as_posix()
+            env_first["DATABASE_URL"] = f"sqlite:///{source_db.as_posix()}"
             first_boot = self._run_python_script(script=first_boot_script, env=env_first)
             self.assertEqual(
                 first_boot.returncode,
@@ -452,7 +452,7 @@ asyncio.run(run())
             env_second["ADMIN_USERNAME"] = "phase7_manager"
             env_second["ADMIN_PASSWORD"] = "Phase7ManagerAdmin123"
             env_second["ALLOW_LEGACY_PASSWORD_LOGIN"] = "false"
-            env_second["DATABASE_PATH"] = restored_db.as_posix()
+            env_second["DATABASE_URL"] = f"sqlite:///{restored_db.as_posix()}"
             second_boot = self._run_python_script(script=second_boot_script, env=env_second)
             self.assertEqual(
                 second_boot.returncode,

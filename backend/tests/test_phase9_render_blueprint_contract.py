@@ -20,8 +20,7 @@ class Phase9RenderBlueprintContractTests(unittest.TestCase):
             "value: production",
             "- key: EXPOSE_DIAGNOSTIC_ENDPOINTS",
             'value: "true"',
-            "- key: DATABASE_PATH",
-            "value: /var/data/restaurant.db",
+            "- key: DATABASE_URL",
             "- key: JWT_SECRET",
             "- key: SECRET_KEY",
             "- key: MASTER_ADMIN_USERNAME",
@@ -49,7 +48,7 @@ class Phase9RenderBlueprintContractTests(unittest.TestCase):
             "MASTER_ADMIN_PASSWORD=",
             "ADMIN_USERNAME=",
             "ADMIN_PASSWORD=",
-            "DATABASE_PATH=/var/data/restaurant.db",
+            "DATABASE_URL=postgresql+psycopg://postgres:[PASSWORD]@[HOST]:6543/postgres?sslmode=require",
             "CORS_ALLOW_ORIGINS=https://restaurants-console.onrender.com",
         ]
         for assignment in required_assignments:
