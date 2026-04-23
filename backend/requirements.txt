@@ -6,3 +6,4 @@ Pillow==10.4.0
 argon2-cffi==25.1.0
 bcrypt==5.0.0
 alembic==1.18.4
+psycopg[binary]==3.2.9
