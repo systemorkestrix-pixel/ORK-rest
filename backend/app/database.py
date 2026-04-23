@@ -15,11 +15,12 @@ load_local_env_file()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 PROJECT_ROOT = BASE_DIR.parent
+DEFAULT_DATABASE_PATH = BASE_DIR / "restaurant.db"
 
 
 def _resolve_database_path(raw_value: str | None) -> Path:
     if not raw_value:
-        return BASE_DIR / "restaurant.db"
+        return DEFAULT_DATABASE_PATH
 
     raw_path = Path(raw_value).expanduser()
     if raw_path.is_absolute():
@@ -33,9 +34,39 @@ def _resolve_database_path(raw_value: str | None) -> Path:
     return (BASE_DIR / raw_path).resolve()
 
 
-_database_path_raw = os.getenv("DATABASE_PATH")
-DATABASE_PATH = _resolve_database_path(_database_path_raw)
-DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{DATABASE_PATH.as_posix()}")
+def normalize_database_url(raw_value: str) -> str:
+    normalized = str(raw_value or "").strip()
+    if not normalized:
+        raise RuntimeError("DATABASE_URL must not be empty.")
+    if normalized.startswith("postgres://"):
+        return f"postgresql+psycopg://{normalized.removeprefix('postgres://')}"
+    if normalized.startswith("postgresql://") and "+psycopg" not in normalized.split("://", 1)[0]:
+        return f"postgresql+psycopg://{normalized.removeprefix('postgresql://')}"
+    return normalized
+
+
+def resolve_database_url(database_url_raw: str | None = None, database_path_raw: str | None = None) -> str:
+    if database_url_raw and database_url_raw.strip():
+        return normalize_database_url(database_url_raw)
+
+    database_path = _resolve_database_path(database_path_raw)
+    return f"sqlite:///{database_path.as_posix()}"
+
+
+DATABASE_URL = resolve_database_url(os.getenv("DATABASE_URL"), os.getenv("DATABASE_PATH"))
+
+
+def is_sqlite_database_url(database_url: str) -> bool:
+    return str(database_url or "").strip().startswith("sqlite")
+
+
+def resolve_sqlite_database_path(app_engine: Engine) -> Path | None:
+    if app_engine.dialect.name != "sqlite":
+        return None
+    database = getattr(app_engine.url, "database", None)
+    if not database:
+        return None
+    return Path(str(database)).expanduser().resolve()
 
 
 def _register_sqlite_datetime_adapter() -> None:
@@ -53,9 +84,9 @@ def _apply_sqlite_pragmas(dbapi_connection, _connection_record) -> None:
 
 
 def create_app_engine(database_url: str) -> Engine:
-    connect_args = {"check_same_thread": False} if database_url.startswith("sqlite") else {}
-    app_engine = create_engine(database_url, connect_args=connect_args)
-    if database_url.startswith("sqlite"):
+    connect_args = {"check_same_thread": False} if is_sqlite_database_url(database_url) else {}
+    app_engine = create_engine(database_url, connect_args=connect_args, pool_pre_ping=True)
+    if is_sqlite_database_url(database_url):
         _register_sqlite_datetime_adapter()
         event.listen(app_engine, "connect", _apply_sqlite_pragmas)
     return app_engine
@@ -95,9 +126,10 @@ def assert_production_migration_state(
 
 def run_startup_integrity_checks(app_engine: Engine) -> None:
     with app_engine.connect() as connection:
-        fk_violations = connection.execute(text("PRAGMA foreign_key_check")).fetchall()
-        if fk_violations:
-            raise RuntimeError(f"Startup blocked: foreign key violations detected ({len(fk_violations)} row(s)).")
+        if app_engine.dialect.name == "sqlite":
+            fk_violations = connection.execute(text("PRAGMA foreign_key_check")).fetchall()
+            if fk_violations:
+                raise RuntimeError(f"Startup blocked: foreign key violations detected ({len(fk_violations)} row(s)).")
 
         orphan_payments = int(
             connection.execute(
