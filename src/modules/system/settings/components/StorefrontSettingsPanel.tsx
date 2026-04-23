@@ -19,13 +19,19 @@ export function StorefrontSettingsPanel() {
   const queryClient = useQueryClient();
   const [form, setForm] = useState<StorefrontSettings>(defaultStorefrontSettings);
 
+  const tenantContextQuery = useQuery({
+    queryKey: ['manager-tenant-context'],
+    queryFn: () => api.managerTenantContext(role ?? 'manager'),
+    enabled: role === 'manager',
+    staleTime: 30_000,
+  });
+
   const publicOrderUrl = useMemo(() => {
-    if (typeof window === 'undefined') {
-      return '/order';
-    }
-    const tenantCode = window.sessionStorage.getItem('active_tenant_code')?.trim();
-    return tenantCode ? `/t/${encodeURIComponent(tenantCode)}/order` : '/order';
-  }, []);
+    const tenantCode =
+      tenantContextQuery.data?.tenant_code?.trim() ||
+      (typeof window === 'undefined' ? '' : window.sessionStorage.getItem('active_tenant_code')?.trim() || '');
+    return tenantCode ? `/t/${encodeURIComponent(tenantCode)}/order` : null;
+  }, [tenantContextQuery.data?.tenant_code]);
 
   const storefrontQuery = useQuery({
     queryKey: ['manager-storefront-settings'],
@@ -187,7 +193,13 @@ export function StorefrontSettingsPanel() {
       <button
         type="button"
         className="btn-secondary mt-4 w-full justify-center"
-        onClick={() => window.open(publicOrderUrl, '_blank', 'noopener,noreferrer')}
+        onClick={() => {
+          if (!publicOrderUrl) {
+            return;
+          }
+          window.open(publicOrderUrl, '_blank', 'noopener,noreferrer');
+        }}
+        disabled={!publicOrderUrl}
       >
         <ExternalLink className="h-4 w-4" />
         <span>فتح الواجهة العامة</span>
