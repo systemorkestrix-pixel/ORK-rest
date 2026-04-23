@@ -1,19 +1,16 @@
 from logging.config import fileConfig
 import os
-from pathlib import Path
 
 from sqlalchemy import engine_from_config, pool
 from alembic import context
 
-from app.database import Base
+from app.database import Base, normalize_database_url, resolve_database_url
 from app.env_loader import load_local_env_file
 import app.models  # noqa: F401
 
 load_local_env_file()
 
 config = context.config
-BASE_DIR = Path(__file__).resolve().parent.parent
-PROJECT_ROOT = BASE_DIR.parent
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
@@ -30,23 +27,14 @@ def get_database_url() -> str:
     """
     url = os.getenv("DATABASE_URL")
     if url:
-        normalized_url = url.strip()
-        if normalized_url.startswith("postgres://"):
-            normalized_url = f"postgresql://{normalized_url.removeprefix('postgres://')}"
-        return normalized_url
+        return normalize_database_url(url)
 
     path = os.getenv("DATABASE_PATH")
     if path:
-        raw_path = Path(path).expanduser()
-        if not raw_path.is_absolute():
-            if raw_path.parts and raw_path.parts[0] == BASE_DIR.name:
-                raw_path = (PROJECT_ROOT / raw_path).resolve()
-            else:
-                raw_path = (BASE_DIR / raw_path).resolve()
-        return f"sqlite:///{raw_path.as_posix()}"
+        return resolve_database_url(database_path_raw=path)
 
     # safe fallback for local dev only
-    return "sqlite:///restaurant.db"
+    return resolve_database_url()
 
 
 DATABASE_URL = get_database_url()
