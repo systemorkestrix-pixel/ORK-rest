@@ -8,13 +8,19 @@ from fastapi import HTTPException, status
 from sqlalchemy import MetaData, select, text
 from sqlalchemy.orm import Session, sessionmaker
 
-from app.database import BASE_DIR, Base, create_app_engine, engine as master_engine, run_startup_integrity_checks
+from app.database import Base, engine as master_engine, run_startup_integrity_checks
 from app.enums import TableStatus, UserRole
 from app.models import ExpenseCostCenter, MasterTenant, RestaurantTable, SystemSetting, User
 from app.security import hash_password
 from app.tenant_runtime import dispose_tenant_runtime
+from app.tenant_runtime_storage import (
+    TENANT_RUNTIME_SQLITE_DIR,
+    create_tenant_runtime_engine,
+    ensure_tenant_runtime_storage_root,
+    resolve_tenant_runtime_sqlite_path,
+)
 
-TENANTS_DIR = BASE_DIR / "tenants"
+TENANTS_DIR = TENANT_RUNTIME_SQLITE_DIR
 DEFAULT_EXPENSE_COST_CENTER_CODE = "GENERAL"
 DEFAULT_EXPENSE_COST_CENTER_NAME = "Ù…ØµØ±ÙˆÙ Ø¹Ø§Ù…"
 DEFAULT_DELIVERY_FEE = "0.00"
@@ -30,10 +36,7 @@ for table in Base.metadata.sorted_tables:
 
 
 def resolve_tenant_database_path(database_name: str) -> Path:
-    normalized = str(database_name or "").strip()
-    if not normalized:
-        raise ValueError("database_name is required")
-    return (TENANTS_DIR / f"{normalized}.sqlite3").resolve()
+    return resolve_tenant_runtime_sqlite_path(database_name)
 
 
 def build_tenant_table_public_path(*, tenant_code: str | None, table_id: int) -> str:
@@ -166,7 +169,7 @@ def backfill_tenant_table_qr_codes(*, database_name: str, tenant_code: str) -> i
         )
 
     dispose_tenant_runtime(database_name)
-    tenant_engine = create_app_engine(f"sqlite:///{database_path.as_posix()}")
+    tenant_engine = create_tenant_runtime_engine(database_name)
     tenant_session_factory = sessionmaker(autocommit=False, autoflush=False, bind=tenant_engine)
     updated = 0
 
@@ -224,7 +227,7 @@ def sync_all_tenant_tables(master_db: Session, *, table_names: list[str]) -> lis
             continue
 
         dispose_tenant_runtime(tenant.database_name)
-        tenant_engine = create_app_engine(f"sqlite:///{database_path.as_posix()}")
+        tenant_engine = create_tenant_runtime_engine(tenant.database_name)
         try:
             _TENANT_SCHEMA.create_all(bind=tenant_engine, tables=resolved_tables)
             synced_databases.append(tenant.database_name)
@@ -277,7 +280,7 @@ def provision_tenant_database(
     manager_name: str,
 ) -> Path:
     database_path = resolve_tenant_database_path(database_name)
-    TENANTS_DIR.mkdir(parents=True, exist_ok=True)
+    ensure_tenant_runtime_storage_root()
 
     if database_path.exists():
         raise HTTPException(
@@ -285,7 +288,7 @@ def provision_tenant_database(
             detail="Ù…Ù„Ù Ù‚Ø§Ø¹Ø¯Ø© Ø§Ù„Ù†Ø³Ø®Ø© Ù…ÙˆØ¬ÙˆØ¯ Ø¨Ø§Ù„ÙØ¹Ù„. Ø§Ø³ØªØ®Ø¯Ù… Ø§Ø³Ù… Ù‚Ø§Ø¹Ø¯Ø© Ù…Ø®ØªÙ„ÙÙ‹Ø§ Ø£Ùˆ Ù†Ø¸Ù Ø§Ù„Ù†Ø³Ø®Ø© Ø§Ù„Ù‚Ø¯ÙŠÙ…Ø©.",
         )
 
-    tenant_engine = create_app_engine(f"sqlite:///{database_path.as_posix()}")
+    tenant_engine = create_tenant_runtime_engine(database_name)
     tenant_session_factory = sessionmaker(autocommit=False, autoflush=False, bind=tenant_engine)
 
     try:
@@ -334,7 +337,7 @@ def ensure_tenant_kitchen_access(
         )
 
     dispose_tenant_runtime(database_name)
-    tenant_engine = create_app_engine(f"sqlite:///{database_path.as_posix()}")
+    tenant_engine = create_tenant_runtime_engine(database_name)
     tenant_session_factory = sessionmaker(autocommit=False, autoflush=False, bind=tenant_engine)
 
     try:
@@ -389,7 +392,7 @@ def regenerate_tenant_manager_password(
         )
 
     dispose_tenant_runtime(database_name)
-    tenant_engine = create_app_engine(f"sqlite:///{database_path.as_posix()}")
+    tenant_engine = create_tenant_runtime_engine(database_name)
     tenant_session_factory = sessionmaker(autocommit=False, autoflush=False, bind=tenant_engine)
 
     try:
