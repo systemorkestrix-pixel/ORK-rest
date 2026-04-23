@@ -1,17 +1,23 @@
 from __future__ import annotations
 
-from pathlib import Path
-
 from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.models import MasterTenant
 
-from .database import BASE_DIR, SessionLocal, create_app_engine
+from .database import SessionLocal
 from .security import decode_access_token
+from .tenant_runtime_storage import (
+    TENANT_RUNTIME_SQLITE_DIR,
+    create_tenant_runtime_engine,
+    infer_tenant_database_name_from_runtime_database,
+    resolve_tenant_runtime_sqlite_path,
+    resolve_tenant_runtime_target,
+    tenant_runtime_target_exists,
+)
 
-TENANTS_DIR = BASE_DIR / "tenants"
+TENANTS_DIR = TENANT_RUNTIME_SQLITE_DIR
 _TENANT_SESSIONMAKERS: dict[str, sessionmaker] = {}
 
 
@@ -30,11 +36,8 @@ def is_public_registry_path(path: str) -> bool:
     return normalized in {"/api/public/tenant-entry", "/public/tenant-entry"}
 
 
-def _tenant_database_path(database_name: str) -> Path:
-    normalized = str(database_name or "").strip()
-    if not normalized:
-        raise ValueError("database_name is required")
-    return (TENANTS_DIR / f"{normalized}.sqlite3").resolve()
+def _tenant_database_path(database_name: str):
+    return resolve_tenant_runtime_sqlite_path(database_name)
 
 
 def _resolve_master_tenant_by_database_name(master_db: Session, database_name: str) -> MasterTenant | None:
@@ -72,20 +75,20 @@ def get_tenant_sessionmaker(database_name: str) -> sessionmaker:
     if not normalized:
         raise ValueError("database_name is required")
 
-    factory = _TENANT_SESSIONMAKERS.get(normalized)
+    target = resolve_tenant_runtime_target(normalized)
+    factory = _TENANT_SESSIONMAKERS.get(target.cache_key)
     if factory is not None:
         return factory
 
-    database_path = _tenant_database_path(normalized)
-    if not database_path.exists():
+    if not tenant_runtime_target_exists(target):
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="قاعدة النسخة غير متاحة حاليًا.",
         )
 
-    engine = create_app_engine(f"sqlite:///{database_path.as_posix()}")
+    engine = create_tenant_runtime_engine(target)
     factory = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-    _TENANT_SESSIONMAKERS[normalized] = factory
+    _TENANT_SESSIONMAKERS[target.cache_key] = factory
     return factory
 
 
@@ -100,7 +103,8 @@ def dispose_tenant_runtime(database_name: str | None) -> None:
     normalized = str(database_name or "").strip()
     if not normalized:
         return
-    factory = _TENANT_SESSIONMAKERS.pop(normalized, None)
+    target = resolve_tenant_runtime_target(normalized)
+    factory = _TENANT_SESSIONMAKERS.pop(target.cache_key, None)
     if factory is None:
         return
     bind = factory.kw.get("bind")
@@ -111,24 +115,7 @@ def dispose_tenant_runtime(database_name: str | None) -> None:
 def infer_tenant_database_name_from_session(db: Session) -> str | None:
     bind = db.get_bind()
     database = getattr(getattr(bind, "url", None), "database", None)
-    if not database:
-        return None
-
-    path = Path(str(database))
-    try:
-        resolved = path.resolve()
-    except OSError:
-        return None
-
-    try:
-        if resolved.parent != TENANTS_DIR.resolve():
-            return None
-    except OSError:
-        return None
-
-    if resolved.suffix != ".sqlite3":
-        return None
-    return resolved.stem
+    return infer_tenant_database_name_from_runtime_database(database)
 
 
 def infer_tenant_record_from_session(db: Session) -> MasterTenant | None:
