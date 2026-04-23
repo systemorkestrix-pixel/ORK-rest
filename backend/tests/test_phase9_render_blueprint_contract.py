@@ -20,6 +20,9 @@ class Phase9RenderBlueprintContractTests(unittest.TestCase):
             "value: production",
             "- key: EXPOSE_DIAGNOSTIC_ENDPOINTS",
             'value: "true"',
+            "- key: RUN_STARTUP_MAINTENANCE",
+            "- key: RUN_STARTUP_TENANT_SYNC",
+            "- key: RUN_STARTUP_INTEGRITY_CHECKS",
             "- key: DATABASE_URL",
             "- key: JWT_SECRET",
             "- key: SECRET_KEY",
@@ -49,6 +52,10 @@ class Phase9RenderBlueprintContractTests(unittest.TestCase):
             "ADMIN_USERNAME=",
             "ADMIN_PASSWORD=",
             "DATABASE_URL=postgresql+psycopg://postgres:[PASSWORD]@[HOST]:6543/postgres?sslmode=require",
+            "RUN_STARTUP_MAINTENANCE=false",
+            "RUN_STARTUP_TENANT_SYNC=false",
+            "RUN_STARTUP_INTEGRITY_CHECKS=false",
+            "python backend/scripts/run_production_maintenance.py",
             "CORS_ALLOW_ORIGINS=https://restaurants-console.onrender.com",
         ]
         for assignment in required_assignments:
