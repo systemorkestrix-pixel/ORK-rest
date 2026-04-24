@@ -235,10 +235,16 @@ def app_record_delivery_completion(
         actor_id=actor_id,
     )
 
-def app_save_expense_attachment(*, data_base64: str, mime_type: str, file_name: str | None) -> tuple[str, str, int]:
+def app_save_expense_attachment(
+    db: Session,
+    *,
+    data_base64: str,
+    mime_type: str,
+    file_name: str | None,
+) -> tuple[str, str, int]:
     from application.inventory_engine.domain.media import save_expense_attachment
 
-    return save_expense_attachment(data_base64=data_base64, mime_type=mime_type, file_name=file_name)
+    return save_expense_attachment(db=db, data_base64=data_base64, mime_type=mime_type, file_name=file_name)
 
 
 def app_validate_password_policy(*, password: str, username: str | None = None) -> None:
@@ -1018,7 +1024,7 @@ def app_create_expense_attachment(
             mime_type=mime_type,
             data_base64=data_base64,
             uploaded_by=created_by,
-            save_attachment=app_save_expense_attachment,
+            save_attachment=lambda **payload: app_save_expense_attachment(db, **payload),
         )
         file_url = attachment.file_url if attachment is not None else None
     except Exception:
