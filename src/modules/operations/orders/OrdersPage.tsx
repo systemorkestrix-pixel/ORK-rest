@@ -305,13 +305,7 @@ function resolveOrderPiecesTotal(order: Order): number {
   return order.items.reduce((sum, item) => sum + item.quantity, 0);
 }
 
-function openOrderTicketPrintView(order: Order): void {
-  const popup = window.open('', '_blank', 'noopener,noreferrer,width=560,height=760');
-  if (!popup) {
-    window.alert('تعذر فتح نافذة التذكرة. يمكنك متابعة التشغيل والمحاولة لاحقًا بعد السماح بالنوافذ المنبثقة.');
-    return;
-  }
-
+function buildOrderTicketHtml(order: Order): string {
   const styles = window.getComputedStyle(document.documentElement);
   const textColor = styles.getPropertyValue('--text-primary-strong').trim() || '#2f2218';
   const mutedColor = styles.getPropertyValue('--text-muted').trim() || '#6f6357';
@@ -329,8 +323,7 @@ function openOrderTicketPrintView(order: Order): void {
     )
     .join('');
 
-  popup.document.open();
-  popup.document.write(`<!doctype html>
+  return `<!doctype html>
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="utf-8" />
@@ -405,10 +398,61 @@ function openOrderTicketPrintView(order: Order): void {
     </div>
   </div>
 </body>
-</html>`);
-  popup.document.close();
-  popup.focus();
-  window.setTimeout(() => popup.print(), 250);
+</html>`;
+}
+
+function openOrderTicketPrintView(order: Order): void {
+  const iframe = document.createElement('iframe');
+  iframe.setAttribute('aria-hidden', 'true');
+  iframe.style.position = 'fixed';
+  iframe.style.width = '0';
+  iframe.style.height = '0';
+  iframe.style.opacity = '0';
+  iframe.style.pointerEvents = 'none';
+  iframe.style.border = '0';
+
+  const cleanup = () => {
+    window.setTimeout(() => {
+      if (iframe.parentNode) {
+        iframe.parentNode.removeChild(iframe);
+      }
+    }, 800);
+  };
+
+  iframe.onload = () => {
+    const printWindow = iframe.contentWindow;
+    if (!printWindow) {
+      cleanup();
+      window.alert('تعذر تجهيز الطباعة الآن. يمكنك تحديث الصفحة والمحاولة مجددًا.');
+      return;
+    }
+
+    try {
+      printWindow.focus();
+      window.setTimeout(() => {
+        try {
+          printWindow.print();
+        } finally {
+          cleanup();
+        }
+      }, 250);
+    } catch {
+      cleanup();
+      window.alert('تعذر تشغيل الطباعة الآن. يمكنك المحاولة مجددًا بعد تحديث الصفحة.');
+    }
+  };
+
+  document.body.appendChild(iframe);
+  const frameDocument = iframe.contentDocument;
+  if (!frameDocument) {
+    cleanup();
+    window.alert('تعذر تجهيز الطباعة الآن. يمكنك تحديث الصفحة والمحاولة مجددًا.');
+    return;
+  }
+
+  frameDocument.open();
+  frameDocument.write(buildOrderTicketHtml(order));
+  frameDocument.close();
 }
 
 function renderOrderFollowupContent(order: Order, autoNotifyTeam: boolean) {
