@@ -12,6 +12,7 @@ from .catalog import (
 )
 from .inbound import create_inbound_voucher
 from .media import remove_static_file, save_expense_attachment, save_product_image, upload_product_image
+from .media_storage import migrate_tenant_media_references_to_remote
 from .stock_count import create_stock_count, settle_stock_count
 
 __all__ = [
@@ -23,6 +24,7 @@ __all__ = [
     "delete_product_category",
     "delete_product_permanently",
     "list_product_categories",
+    "migrate_tenant_media_references_to_remote",
     "remove_static_file",
     "save_expense_attachment",
     "save_product_image",
