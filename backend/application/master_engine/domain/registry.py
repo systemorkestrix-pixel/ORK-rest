@@ -19,6 +19,7 @@ from app.master_tenant_runtime_contract import (
 )
 from app.config import load_settings
 from app.tenant_runtime import infer_tenant_database_name_from_session, infer_tenant_record_from_session
+from app.tenant_runtime_storage import build_tenant_runtime_target
 
 from .catalog import (
     available_addon_ids_up_to,
@@ -574,6 +575,12 @@ def create_master_tenant(
 
     manager_username = _generate_unique_manager_username(db, normalized_code)
     manager_password = _generate_initial_password()
+    runtime_schema_name = build_master_tenant_runtime_schema_name(normalized_database_name)
+    runtime_target = build_tenant_runtime_target(
+        database_name=normalized_database_name,
+        backend=MASTER_TENANT_RUNTIME_STORAGE_BACKEND_POSTGRES_SCHEMA,
+        schema_name=runtime_schema_name,
+    )
 
     try:
         tenant = MasterTenant(
@@ -586,7 +593,7 @@ def create_master_tenant(
             plan_id=DEFAULT_STAGE_ID,
             paused_addons_json=_serialize_paused_addons([]),
             runtime_storage_backend=MASTER_TENANT_RUNTIME_STORAGE_BACKEND_POSTGRES_SCHEMA,
-            runtime_schema_name=build_master_tenant_runtime_schema_name(normalized_database_name),
+            runtime_schema_name=runtime_schema_name,
             runtime_migration_state=MASTER_TENANT_RUNTIME_MIGRATION_STATE_CUTOVER,
             runtime_migrated_at=_utc_now(),
             media_storage_backend=SETTINGS.media_storage_backend,
@@ -605,6 +612,7 @@ def create_master_tenant(
             manager_username=manager_username,
             manager_password=manager_password,
             manager_name=client.owner_name,
+            target_override=runtime_target,
         )
 
         tenant.environment_state = "ready"

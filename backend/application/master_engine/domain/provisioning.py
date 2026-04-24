@@ -311,8 +311,9 @@ def provision_tenant_database(
     manager_username: str,
     manager_password: str,
     manager_name: str,
+    target_override: TenantRuntimeStorageTarget | None = None,
 ) -> TenantRuntimeStorageTarget:
-    target = resolve_tenant_runtime_target(database_name)
+    target = target_override or resolve_tenant_runtime_target(database_name)
     if target.backend != MASTER_TENANT_RUNTIME_STORAGE_BACKEND_POSTGRES_SCHEMA:
         ensure_tenant_runtime_storage_root()
         if target.database_path and target.database_path.exists():
