@@ -22,6 +22,16 @@ services:
         value: "false"
       - key: RUN_STARTUP_INTEGRITY_CHECKS
         value: "false"
+      - key: MEDIA_STORAGE_BACKEND
+        value: supabase_storage
+      - key: MEDIA_STORAGE_BUCKET
+        sync: false
+      - key: MEDIA_STORAGE_PROJECT_URL
+        sync: false
+      - key: MEDIA_STORAGE_PUBLIC_BASE_URL
+        sync: false
+      - key: MEDIA_STORAGE_SERVICE_ROLE_KEY
+        sync: false
       - key: DATABASE_URL
         sync: false
       - key: CORS_ALLOW_ORIGINS
