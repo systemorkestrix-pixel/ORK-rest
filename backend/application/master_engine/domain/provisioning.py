@@ -10,19 +10,25 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.database import Base, engine as master_engine, run_startup_integrity_checks
 from app.enums import TableStatus, UserRole
+from app.master_tenant_runtime_contract import MASTER_TENANT_RUNTIME_STORAGE_BACKEND_POSTGRES_SCHEMA
 from app.models import ExpenseCostCenter, MasterTenant, RestaurantTable, SystemSetting, User
 from app.security import hash_password
 from app.tenant_runtime import dispose_tenant_runtime
 from app.tenant_runtime_storage import (
     TENANT_RUNTIME_SQLITE_DIR,
+    TenantRuntimeStorageTarget,
     create_tenant_runtime_engine,
     ensure_tenant_runtime_storage_root,
     resolve_tenant_runtime_sqlite_path,
+    resolve_tenant_runtime_target,
+    tenant_runtime_target_exists,
 )
+
+from .postgres_runtime_provisioning import provision_postgres_tenant_runtime_schema
 
 TENANTS_DIR = TENANT_RUNTIME_SQLITE_DIR
 DEFAULT_EXPENSE_COST_CENTER_CODE = "GENERAL"
-DEFAULT_EXPENSE_COST_CENTER_NAME = "Ù…ØµØ±ÙˆÙ Ø¹Ø§Ù…"
+DEFAULT_EXPENSE_COST_CENTER_NAME = "مصرف عام"
 DEFAULT_DELIVERY_FEE = "0.00"
 KITCHEN_ACCESS_USERNAME = "kitchen"
 KITCHEN_ACCESS_PASSWORD_KEY = "kitchen_access_password"
@@ -160,17 +166,27 @@ def _ensure_default_tables(tenant_session: Session, *, tenant_code: str) -> None
     )
 
 
+def _assert_tenant_runtime_target_exists(*, target: TenantRuntimeStorageTarget, not_found_detail: str) -> None:
+    if tenant_runtime_target_exists(target):
+        return
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=not_found_detail)
+
+
+def _create_tenant_runtime_session_factory(target: TenantRuntimeStorageTarget) -> tuple[object, sessionmaker]:
+    tenant_engine = create_tenant_runtime_engine(target)
+    tenant_session_factory = sessionmaker(autocommit=False, autoflush=False, bind=tenant_engine)
+    return tenant_engine, tenant_session_factory
+
+
 def backfill_tenant_table_qr_codes(*, database_name: str, tenant_code: str) -> int:
-    database_path = resolve_tenant_database_path(database_name)
-    if not database_path.exists():
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Ù‚Ø§Ø¹Ø¯Ø© Ø§Ù„Ù†Ø³Ø®Ø© ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯Ø© Ù„ØªÙ†ÙÙŠØ° Ù…Ø²Ø§Ù…Ù†Ø© Ø±ÙˆØ§Ø¨Ø· Ø§Ù„Ø·Ø§ÙˆÙ„Ø§Øª.",
-        )
+    target = resolve_tenant_runtime_target(database_name)
+    _assert_tenant_runtime_target_exists(
+        target=target,
+        not_found_detail="قاعدة النسخة غير موجودة لتنفيذ مزامنة روابط الطاولات.",
+    )
 
     dispose_tenant_runtime(database_name)
-    tenant_engine = create_tenant_runtime_engine(database_name)
-    tenant_session_factory = sessionmaker(autocommit=False, autoflush=False, bind=tenant_engine)
+    tenant_engine, tenant_session_factory = _create_tenant_runtime_session_factory(target)
     updated = 0
 
     try:
@@ -222,12 +238,12 @@ def sync_all_tenant_tables(master_db: Session, *, table_names: list[str]) -> lis
     synced_databases: list[str] = []
     tenants = master_db.execute(select(MasterTenant).order_by(MasterTenant.id.asc())).scalars().all()
     for tenant in tenants:
-        database_path = resolve_tenant_database_path(tenant.database_name)
-        if not database_path.exists():
+        target = resolve_tenant_runtime_target(tenant.database_name)
+        if not tenant_runtime_target_exists(target):
             continue
 
         dispose_tenant_runtime(tenant.database_name)
-        tenant_engine = create_tenant_runtime_engine(tenant.database_name)
+        tenant_engine = create_tenant_runtime_engine(target)
         try:
             _TENANT_SCHEMA.create_all(bind=tenant_engine, tables=resolved_tables)
             synced_databases.append(tenant.database_name)
@@ -270,6 +286,23 @@ def cleanup_provisioned_database(database_path: Path) -> None:
         database_path.unlink()
 
 
+def cleanup_provisioned_tenant_runtime(target: TenantRuntimeStorageTarget) -> None:
+    dispose_tenant_runtime(target.database_name)
+    if target.backend == MASTER_TENANT_RUNTIME_STORAGE_BACKEND_POSTGRES_SCHEMA:
+        if not target.schema_name:
+            return
+        tenant_engine = create_tenant_runtime_engine(target)
+        try:
+            with tenant_engine.begin() as connection:
+                connection.execute(text(f'DROP SCHEMA IF EXISTS "{target.schema_name}" CASCADE'))
+        finally:
+            tenant_engine.dispose()
+        return
+
+    if target.database_path and target.database_path.exists():
+        target.database_path.unlink()
+
+
 def provision_tenant_database(
     *,
     database_name: str,
@@ -278,27 +311,32 @@ def provision_tenant_database(
     manager_username: str,
     manager_password: str,
     manager_name: str,
-) -> Path:
-    database_path = resolve_tenant_database_path(database_name)
-    ensure_tenant_runtime_storage_root()
+) -> TenantRuntimeStorageTarget:
+    target = resolve_tenant_runtime_target(database_name)
+    if target.backend != MASTER_TENANT_RUNTIME_STORAGE_BACKEND_POSTGRES_SCHEMA:
+        ensure_tenant_runtime_storage_root()
+        if target.database_path and target.database_path.exists():
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="ملف قاعدة النسخة موجود بالفعل. استخدم اسم قاعدة مختلفا أو نظف النسخة القديمة.",
+            )
 
-    if database_path.exists():
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Ù…Ù„Ù Ù‚Ø§Ø¹Ø¯Ø© Ø§Ù„Ù†Ø³Ø®Ø© Ù…ÙˆØ¬ÙˆØ¯ Ø¨Ø§Ù„ÙØ¹Ù„. Ø§Ø³ØªØ®Ø¯Ù… Ø§Ø³Ù… Ù‚Ø§Ø¹Ø¯Ø© Ù…Ø®ØªÙ„ÙÙ‹Ø§ Ø£Ùˆ Ù†Ø¸Ù Ø§Ù„Ù†Ø³Ø®Ø© Ø§Ù„Ù‚Ø¯ÙŠÙ…Ø©.",
-        )
-
-    tenant_engine = create_tenant_runtime_engine(database_name)
-    tenant_session_factory = sessionmaker(autocommit=False, autoflush=False, bind=tenant_engine)
+    tenant_engine, tenant_session_factory = _create_tenant_runtime_session_factory(target)
 
     try:
-        _TENANT_SCHEMA.create_all(bind=tenant_engine)
+        if target.backend == MASTER_TENANT_RUNTIME_STORAGE_BACKEND_POSTGRES_SCHEMA:
+            if not target.schema_name:
+                raise RuntimeError(f"Tenant {database_name!r} is missing runtime_schema_name for postgres provisioning.")
+            provision_postgres_tenant_runtime_schema(tenant_engine, schema_name=target.schema_name)
+        else:
+            _TENANT_SCHEMA.create_all(bind=tenant_engine)
+
         tenant_session = tenant_session_factory()
         try:
             _stamp_revision(tenant_session)
             manager = _ensure_manager_user(
                 tenant_session,
-                manager_name=manager_name or f"Ù…Ø¯ÙŠØ± {tenant_brand_name}",
+                manager_name=manager_name or f"مدير {tenant_brand_name}",
                 manager_username=manager_username,
                 manager_password=manager_password,
             )
@@ -312,10 +350,10 @@ def provision_tenant_database(
             tenant_session.close()
 
         run_startup_integrity_checks(tenant_engine)
-        return database_path
+        return target
     except Exception:
         tenant_engine.dispose()
-        cleanup_provisioned_database(database_path)
+        cleanup_provisioned_tenant_runtime(target)
         raise
     finally:
         tenant_engine.dispose()
@@ -329,16 +367,14 @@ def ensure_tenant_kitchen_access(
     regenerate_password: bool = False,
     updated_by: int | None = None,
 ) -> dict[str, object]:
-    database_path = resolve_tenant_database_path(database_name)
-    if not database_path.exists():
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Ù‚Ø§Ø¹Ø¯Ø© Ø§Ù„Ù†Ø³Ø®Ø© ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯Ø© Ù„ØªØ¬Ù‡ÙŠØ² ÙˆØµÙˆÙ„ Ø§Ù„Ù…Ø·Ø¨Ø®.",
-        )
+    target = resolve_tenant_runtime_target(database_name)
+    _assert_tenant_runtime_target_exists(
+        target=target,
+        not_found_detail="قاعدة النسخة غير موجودة لتجهيز وصول المطبخ.",
+    )
 
     dispose_tenant_runtime(database_name)
-    tenant_engine = create_tenant_runtime_engine(database_name)
-    tenant_session_factory = sessionmaker(autocommit=False, autoflush=False, bind=tenant_engine)
+    tenant_engine, tenant_session_factory = _create_tenant_runtime_session_factory(target)
 
     try:
         tenant_session = tenant_session_factory()
@@ -349,7 +385,7 @@ def ensure_tenant_kitchen_access(
 
             _ensure_role_user(
                 tenant_session,
-                display_name=f"Ù…Ø·Ø¨Ø® {tenant_brand_name}".strip(),
+                display_name=f"مطبخ {tenant_brand_name}".strip(),
                 username=KITCHEN_ACCESS_USERNAME,
                 password=password,
                 role=UserRole.KITCHEN,
@@ -384,16 +420,14 @@ def regenerate_tenant_manager_password(
     manager_password: str,
     manager_name: str,
 ) -> None:
-    database_path = resolve_tenant_database_path(database_name)
-    if not database_path.exists():
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Ù‚Ø§Ø¹Ø¯Ø© Ø§Ù„Ù†Ø³Ø®Ø© ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯Ø© Ù„ØªØ­Ø¯ÙŠØ« ÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø±ÙˆØ±.",
-        )
+    target = resolve_tenant_runtime_target(database_name)
+    _assert_tenant_runtime_target_exists(
+        target=target,
+        not_found_detail="قاعدة النسخة غير موجودة لتحديث كلمة المرور.",
+    )
 
     dispose_tenant_runtime(database_name)
-    tenant_engine = create_tenant_runtime_engine(database_name)
-    tenant_session_factory = sessionmaker(autocommit=False, autoflush=False, bind=tenant_engine)
+    tenant_engine, tenant_session_factory = _create_tenant_runtime_session_factory(target)
 
     try:
         tenant_session = tenant_session_factory()

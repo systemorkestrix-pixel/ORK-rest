@@ -12,6 +12,11 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from app.models import MasterClient, MasterTenant
+from app.master_tenant_runtime_contract import (
+    MASTER_TENANT_RUNTIME_MIGRATION_STATE_CUTOVER,
+    MASTER_TENANT_RUNTIME_STORAGE_BACKEND_POSTGRES_SCHEMA,
+    build_master_tenant_runtime_schema_name,
+)
 from app.config import load_settings
 from app.tenant_runtime import infer_tenant_database_name_from_session, infer_tenant_record_from_session
 
@@ -30,11 +35,10 @@ from .catalog import (
     normalize_stage_id,
 )
 from .provisioning import (
-    cleanup_provisioned_database,
+    cleanup_provisioned_tenant_runtime,
     ensure_tenant_kitchen_access,
     provision_tenant_database,
     regenerate_tenant_manager_password,
-    resolve_tenant_database_path,
 )
 
 SLUG_PATTERN = re.compile(r"[^a-z0-9]+")
@@ -283,6 +287,11 @@ def serialize_master_tenant(tenant: MasterTenant) -> dict[str, object]:
         "database_name": tenant.database_name,
         "manager_username": tenant.manager_username,
         "environment_state": tenant.environment_state,
+        "runtime_storage_backend": tenant.runtime_storage_backend,
+        "runtime_schema_name": tenant.runtime_schema_name,
+        "runtime_migration_state": tenant.runtime_migration_state,
+        "runtime_migrated_at": tenant.runtime_migrated_at.isoformat() if tenant.runtime_migrated_at else None,
+        "media_storage_backend": tenant.media_storage_backend,
         "enabled_tools": enabled_tools,
         "hidden_tools": hidden_tools,
         "locked_tools": locked_tools,
@@ -504,7 +513,7 @@ def create_master_tenant(
     tenant_code: str | None,
     database_name: str | None,
 ) -> dict[str, object]:
-    provisioned_database_path = None
+    provisioned_runtime_target = None
     stage = addon_by_id(DEFAULT_STAGE_ID)
 
     if client_mode == "existing":
@@ -576,6 +585,11 @@ def create_master_tenant(
             environment_state="pending_activation",
             plan_id=DEFAULT_STAGE_ID,
             paused_addons_json=_serialize_paused_addons([]),
+            runtime_storage_backend=MASTER_TENANT_RUNTIME_STORAGE_BACKEND_POSTGRES_SCHEMA,
+            runtime_schema_name=build_master_tenant_runtime_schema_name(normalized_database_name),
+            runtime_migration_state=MASTER_TENANT_RUNTIME_MIGRATION_STATE_CUTOVER,
+            runtime_migrated_at=_utc_now(),
+            media_storage_backend=SETTINGS.media_storage_backend,
             updated_at=_utc_now(),
         )
         client.active_plan_id = DEFAULT_STAGE_ID
@@ -584,7 +598,7 @@ def create_master_tenant(
         db.add(tenant)
         db.flush()
 
-        provisioned_database_path = provision_tenant_database(
+        provisioned_runtime_target = provision_tenant_database(
             database_name=normalized_database_name,
             tenant_code=normalized_code,
             tenant_brand_name=normalized_brand_name,
@@ -601,13 +615,13 @@ def create_master_tenant(
         db.refresh(tenant)
     except HTTPException:
         db.rollback()
-        if provisioned_database_path is not None:
-            cleanup_provisioned_database(provisioned_database_path)
+        if provisioned_runtime_target is not None:
+            cleanup_provisioned_tenant_runtime(provisioned_runtime_target)
         raise
     except Exception as error:
         db.rollback()
-        if provisioned_database_path is not None:
-            cleanup_provisioned_database(provisioned_database_path)
+        if provisioned_runtime_target is not None:
+            cleanup_provisioned_tenant_runtime(provisioned_runtime_target)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="تعذر تجهيز قاعدة Tenant الجديدة.",
@@ -738,3 +752,17 @@ def delete_master_tenant(db: Session, *, tenant_id: int) -> None:
     db.delete(tenant)
     db.commit()
     cleanup_provisioned_database(database_path)
+def delete_master_tenant_v2(db: Session, *, tenant_id: int) -> None:
+    tenant = get_registry_tenant(db, tenant_id)
+    if tenant is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ø§Ù„Ù†Ø³Ø®Ø© Ø§Ù„Ù…Ø·Ù„ÙˆØ¨Ø© ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯Ø©.")
+
+    from app.tenant_runtime_storage import resolve_tenant_runtime_target
+
+    runtime_target = resolve_tenant_runtime_target(tenant.database_name)
+    db.delete(tenant)
+    db.commit()
+    cleanup_provisioned_tenant_runtime(runtime_target)
+
+
+delete_master_tenant = delete_master_tenant_v2
