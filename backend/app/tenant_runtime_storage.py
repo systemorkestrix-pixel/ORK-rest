@@ -51,31 +51,42 @@ def build_tenant_runtime_engine_url(*, database_name: str, database_path: Path |
     return f"sqlite:///{path.as_posix()}"
 
 
-def resolve_tenant_runtime_target(database_name: str) -> TenantRuntimeStorageTarget:
+def build_tenant_runtime_target(
+    *,
+    database_name: str,
+    backend: str,
+    schema_name: str | None = None,
+) -> TenantRuntimeStorageTarget:
     normalized = normalize_tenant_database_name(database_name)
-    backend, schema_name = _resolve_master_tenant_runtime_binding(normalized)
-    if backend == TENANT_RUNTIME_POSTGRES_BACKEND:
+    normalized_backend = str(backend or "").strip() or TENANT_RUNTIME_SQLITE_BACKEND
+    if normalized_backend == TENANT_RUNTIME_POSTGRES_BACKEND:
         normalized_schema_name = str(schema_name or "").strip()
         if not normalized_schema_name:
             raise RuntimeError(f"Tenant {normalized!r} is configured for postgres_schema without runtime_schema_name.")
         return TenantRuntimeStorageTarget(
             database_name=normalized,
-            backend=backend,
+            backend=normalized_backend,
             database_path=None,
             schema_name=normalized_schema_name,
             engine_url=DATABASE_URL,
-            cache_key=f"{backend}:{normalized_schema_name}",
+            cache_key=f"{normalized_backend}:{normalized_schema_name}",
         )
 
     database_path = resolve_tenant_runtime_sqlite_path(normalized)
     return TenantRuntimeStorageTarget(
         database_name=normalized,
-        backend=backend,
+        backend=normalized_backend,
         database_path=database_path,
         schema_name=None,
         engine_url=build_tenant_runtime_engine_url(database_name=normalized, database_path=database_path),
-        cache_key=f"{backend}:{normalized}",
+        cache_key=f"{normalized_backend}:{normalized}",
     )
+
+
+def resolve_tenant_runtime_target(database_name: str) -> TenantRuntimeStorageTarget:
+    normalized = normalize_tenant_database_name(database_name)
+    backend, schema_name = _resolve_master_tenant_runtime_binding(normalized)
+    return build_tenant_runtime_target(database_name=normalized, backend=backend, schema_name=schema_name)
 
 
 def ensure_tenant_runtime_storage_root() -> Path:
