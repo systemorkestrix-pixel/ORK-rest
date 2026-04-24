@@ -87,7 +87,16 @@ def get_tenant_sessionmaker(database_name: str) -> sessionmaker:
         )
 
     engine = create_tenant_runtime_engine(target)
-    factory = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    factory = sessionmaker(
+        autocommit=False,
+        autoflush=False,
+        bind=engine,
+        info={
+            "tenant_database_name": normalized,
+            "tenant_runtime_backend": target.backend,
+            "tenant_runtime_schema_name": target.schema_name,
+        },
+    )
     _TENANT_SESSIONMAKERS[target.cache_key] = factory
     return factory
 
@@ -113,6 +122,9 @@ def dispose_tenant_runtime(database_name: str | None) -> None:
 
 
 def infer_tenant_database_name_from_session(db: Session) -> str | None:
+    info_database_name = str(db.info.get("tenant_database_name") or "").strip()
+    if info_database_name:
+        return info_database_name
     bind = db.get_bind()
     database = getattr(getattr(bind, "url", None), "database", None)
     return infer_tenant_database_name_from_runtime_database(database)

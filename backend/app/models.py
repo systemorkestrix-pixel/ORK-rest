@@ -38,6 +38,12 @@ from .enums import (
     TableStatus,
     UserRole,
 )
+from .master_tenant_runtime_contract import (
+    MASTER_TENANT_MEDIA_STORAGE_BACKEND_LOCAL_STATIC,
+    MASTER_TENANT_RUNTIME_MIGRATION_STATE_NOT_STARTED,
+    MASTER_TENANT_RUNTIME_STORAGE_BACKEND_SQLITE_FILE,
+    build_master_tenant_runtime_schema_name,
+)
 
 
 def _utc_now() -> datetime:
@@ -112,6 +118,32 @@ class MasterTenant(Base):
     environment_state: Mapped[str] = mapped_column(String(24), nullable=False, index=True, default="pending_activation")
     plan_id: Mapped[str] = mapped_column(String(40), nullable=False, index=True, default="base")
     paused_addons_json: Mapped[str] = mapped_column(Text, nullable=False, default="[]")
+    runtime_storage_backend: Mapped[str] = mapped_column(
+        String(32),
+        nullable=False,
+        index=True,
+        default=MASTER_TENANT_RUNTIME_STORAGE_BACKEND_SQLITE_FILE,
+    )
+    runtime_schema_name: Mapped[str | None] = mapped_column(
+        String(120),
+        nullable=True,
+        default=lambda context: build_master_tenant_runtime_schema_name(
+            str(context.get_current_parameters().get("database_name") or "")
+        ),
+    )
+    runtime_migration_state: Mapped[str] = mapped_column(
+        String(32),
+        nullable=False,
+        index=True,
+        default=MASTER_TENANT_RUNTIME_MIGRATION_STATE_NOT_STARTED,
+    )
+    runtime_migrated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    media_storage_backend: Mapped[str] = mapped_column(
+        String(32),
+        nullable=False,
+        index=True,
+        default=MASTER_TENANT_MEDIA_STORAGE_BACKEND_LOCAL_STATIC,
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=_utc_now, index=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=_utc_now)
 

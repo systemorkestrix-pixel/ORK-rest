@@ -181,6 +181,11 @@ class MasterTenantOut(BaseModel):
     database_name: str
     manager_username: str
     environment_state: Literal["ready", "pending_activation", "suspended"]
+    runtime_storage_backend: Literal["sqlite_file", "postgres_schema"]
+    runtime_schema_name: str | None = None
+    runtime_migration_state: Literal["not_started", "exporting", "imported", "validated", "cutover", "rollback"]
+    runtime_migrated_at: datetime | None = None
+    media_storage_backend: Literal["local_static", "supabase_storage"]
     enabled_tools: list[str] = Field(default_factory=list)
     hidden_tools: list[str] = Field(default_factory=list)
     locked_tools: list[str] = Field(default_factory=list)

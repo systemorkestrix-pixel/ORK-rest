@@ -32,6 +32,11 @@ class AppSettings:
     run_startup_maintenance: bool
     run_startup_tenant_sync: bool
     run_startup_integrity_checks: bool
+    media_storage_backend: str
+    media_storage_bucket: str | None
+    media_storage_project_url: str | None
+    media_storage_public_base_url: str | None
+    media_storage_service_role_key: str | None
     master_admin_username: str
     master_admin_password: str
     master_admin_display_name: str
@@ -135,6 +140,13 @@ def load_settings() -> AppSettings:
     run_startup_maintenance = _parse_bool_env("RUN_STARTUP_MAINTENANCE", not is_production)
     run_startup_tenant_sync = _parse_bool_env("RUN_STARTUP_TENANT_SYNC", not is_production)
     run_startup_integrity_checks = _parse_bool_env("RUN_STARTUP_INTEGRITY_CHECKS", not is_production)
+    media_storage_backend = (os.getenv("MEDIA_STORAGE_BACKEND") or "local_static").strip().lower() or "local_static"
+    if media_storage_backend not in {"local_static", "supabase_storage"}:
+        raise RuntimeError("MEDIA_STORAGE_BACKEND must be 'local_static' or 'supabase_storage'.")
+    media_storage_bucket = (os.getenv("MEDIA_STORAGE_BUCKET") or "").strip() or None
+    media_storage_project_url = (os.getenv("MEDIA_STORAGE_PROJECT_URL") or "").strip().rstrip("/") or None
+    media_storage_public_base_url = (os.getenv("MEDIA_STORAGE_PUBLIC_BASE_URL") or "").strip().rstrip("/") or None
+    media_storage_service_role_key = (os.getenv("MEDIA_STORAGE_SERVICE_ROLE_KEY") or "").strip() or None
     settings = AppSettings(
         app_env=app_env,
         is_production=is_production,
@@ -161,6 +173,11 @@ def load_settings() -> AppSettings:
         run_startup_maintenance=run_startup_maintenance,
         run_startup_tenant_sync=run_startup_tenant_sync,
         run_startup_integrity_checks=run_startup_integrity_checks,
+        media_storage_backend=media_storage_backend,
+        media_storage_bucket=media_storage_bucket,
+        media_storage_project_url=media_storage_project_url,
+        media_storage_public_base_url=media_storage_public_base_url,
+        media_storage_service_role_key=media_storage_service_role_key,
         master_admin_username=(os.getenv("MASTER_ADMIN_USERNAME") or "owner@master.local").strip(),
         master_admin_password=(os.getenv("MASTER_ADMIN_PASSWORD") or ("Master@2026!" if not is_production else "")).strip(),
         sales_paypal_url=(os.getenv("SALES_PAYPAL_URL") or "").strip() or None,
@@ -184,4 +201,15 @@ def load_settings() -> AppSettings:
             raise RuntimeError("MASTER_ADMIN_USERNAME and MASTER_ADMIN_PASSWORD are required in production.")
         if settings.cookie_domain and "://" in settings.cookie_domain:
             raise RuntimeError("COOKIE_DOMAIN must be a domain only (without protocol).")
+        if settings.media_storage_backend == "supabase_storage":
+            if not settings.media_storage_bucket:
+                raise RuntimeError("MEDIA_STORAGE_BUCKET is required when MEDIA_STORAGE_BACKEND=supabase_storage.")
+            if not settings.media_storage_project_url:
+                raise RuntimeError("MEDIA_STORAGE_PROJECT_URL is required when MEDIA_STORAGE_BACKEND=supabase_storage.")
+            if not settings.media_storage_public_base_url:
+                raise RuntimeError("MEDIA_STORAGE_PUBLIC_BASE_URL is required when MEDIA_STORAGE_BACKEND=supabase_storage.")
+            if not settings.media_storage_service_role_key:
+                raise RuntimeError(
+                    "MEDIA_STORAGE_SERVICE_ROLE_KEY is required when MEDIA_STORAGE_BACKEND=supabase_storage."
+                )
     return settings
